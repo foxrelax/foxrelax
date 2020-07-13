@@ -36,6 +36,7 @@ class Code(Enum):
     REQUIRED_PARAMS_MISSING = 10010
     INVALID_FIELDS_ERROR = 10011
     NOT_FOUND = 10012
+    NOT_VIP = 10013
 
 
 Message = {
@@ -55,5 +56,6 @@ Message = {
     Code.INVALID_PARAMS_ERROR: 'invalid params error',
     Code.REQUIRED_PARAMS_MISSING: 'required params missing',
     Code.INVALID_FIELDS_ERROR: 'invalid fields error',
-    Code.NOT_FOUND: 'not found'
+    Code.NOT_FOUND: 'not found',
+    Code.NOT_VIP: 'not vip'
 }
