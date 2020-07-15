@@ -87,6 +87,20 @@ def stock_daily(symbol=None,
                         fields=fields)
 
 
+def adj_factor(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    股票复权信息
+    """
+
+    client = api_client()
+
+    return client.query('adj_factor',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def stock_suspend(symbol=None,
                   suspend_date=None,
                   resume_date=None,

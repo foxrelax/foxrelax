@@ -9,5 +9,6 @@ from foxrelax.client import api_client
 from foxrelax.config import auth
 
 from foxrelax.api import (echo, trade_calendar, exchange_info, stock_info,
-                          normalize_symbol, stock_daily, stock_suspend,
-                          deposit_rate, loan_rate, cpi, cpi_area)
+                          adj_factor, normalize_symbol, stock_daily,
+                          stock_suspend, deposit_rate, loan_rate, cpi,
+                          cpi_area)
