@@ -87,6 +87,34 @@ def stock_daily(symbol=None,
                         fields=fields)
 
 
+def stock_weekly(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    股票周线行情
+    """
+
+    client = api_client()
+
+    return client.query('stock_weekly',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def stock_monthly(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    股票月线行情
+    """
+
+    client = api_client()
+
+    return client.query('stock_monthly',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def adj_factor(symbol=None, start_date=None, end_date=None, fields=None):
     """
     股票复权信息
@@ -96,6 +124,29 @@ def adj_factor(symbol=None, start_date=None, end_date=None, fields=None):
 
     return client.query('adj_factor',
                         symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def stock_bar(symbol=None,
+              freq=None,
+              adjust=None,
+              trade_date=None,
+              start_date=None,
+              end_date=None,
+              fields=None):
+    """
+    股票通用行情
+    """
+
+    client = api_client()
+
+    return client.query('stock_bar',
+                        symbol=symbol,
+                        freq=freq,
+                        adjust=adjust,
+                        trade_date=trade_date,
                         start_date=start_date,
                         end_date=end_date,
                         fields=fields)
