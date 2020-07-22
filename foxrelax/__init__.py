@@ -11,5 +11,5 @@ from foxrelax.config import auth
 from foxrelax.api import (echo, trade_calendar, exchange_info, stock_info,
                           adj_factor, normalize_symbol, stock_daily,
                           stock_weekly, stock_monthly, stock_bar,
-                          stock_suspend, deposit_rate, loan_rate, cpi,
-                          cpi_area)
+                          balance_sheet, income, cash_flow, stock_suspend,
+                          deposit_rate, loan_rate, cpi, cpi_area)

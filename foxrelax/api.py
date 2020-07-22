@@ -152,6 +152,69 @@ def stock_bar(symbol=None,
                         fields=fields)
 
 
+def balance_sheet(symbol=None,
+                  report_type=None,
+                  report_date=None,
+                  start_date=None,
+                  end_date=None,
+                  fields=None):
+    """
+    股票资产负债表
+    """
+
+    client = api_client()
+
+    return client.query('balance_sheet',
+                        symbol=symbol,
+                        report_type=report_type,
+                        report_date=report_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def income(symbol=None,
+           report_type=None,
+           report_date=None,
+           start_date=None,
+           end_date=None,
+           fields=None):
+    """
+    股票利润表
+    """
+
+    client = api_client()
+
+    return client.query('income',
+                        symbol=symbol,
+                        report_type=report_type,
+                        report_date=report_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def cash_flow(symbol=None,
+              report_type=None,
+              report_date=None,
+              start_date=None,
+              end_date=None,
+              fields=None):
+    """
+    股票现金流量表
+    """
+
+    client = api_client()
+
+    return client.query('cash_flow',
+                        symbol=symbol,
+                        report_type=report_type,
+                        report_date=report_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def stock_suspend(symbol=None,
                   suspend_date=None,
                   resume_date=None,
