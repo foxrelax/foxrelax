@@ -365,6 +365,45 @@ def stock_suspend(symbol=None,
                         fields=fields)
 
 
+def money_supply(start_date=None, end_date=None, fields=None):
+    """
+    货币供应量
+    """
+
+    client = api_client()
+
+    return client.query('money_supply',
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def reserve_ratio(start_date=None, end_date=None, fields=None):
+    """
+    存款准备金率
+    """
+
+    client = api_client()
+
+    return client.query('reserve_ratio',
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def gold_foreign_reserve(start_date=None, end_date=None, fields=None):
+    """
+    央行黄金和外汇储备
+    """
+
+    client = api_client()
+
+    return client.query('gold_foreign_reserve',
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def deposit_rate(start_date=None, end_date=None, fields=None):
     """
     存款利率
