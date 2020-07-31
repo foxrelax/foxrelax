@@ -29,6 +29,16 @@ def trade_calendar(start_date=None, end_date=None, fields=None):
                         fields=fields)
 
 
+def area(fields=None):
+    """
+    地区编码
+    """
+
+    client = api_client()
+
+    return client.query('area', fields=fields)
+
+
 def exchange_info(fields=None):
     """
     交易所信息
@@ -443,6 +453,7 @@ def cpi(start_month=None, end_month=None, fields=None):
                         fields=fields)
 
 
+# pylint:disable=redefined-outer-name
 def cpi_area(area=None, start_month=None, end_month=None, fields=None):
     """
     居民消费价格指数 - 区域
