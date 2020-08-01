@@ -16,4 +16,4 @@ from foxrelax.api import (
     industry_stock_region, industry_stock, stock_industry_industry,
     stock_industry_concept, stock_industry_region, stock_industry,
     money_supply, reserve_ratio, gold_foreign_reserve, stock_suspend,
-    deposit_rate, loan_rate, cpi, cpi_area)
+    deposit_rate, loan_rate, cpi, cpi_item)
