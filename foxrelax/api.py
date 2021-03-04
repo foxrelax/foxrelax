@@ -49,6 +49,97 @@ def exchange_info(fields=None):
     return client.query('exchange_info', fields=fields)
 
 
+def index_info(symbol=None,
+               name=None,
+               market=None,
+               publisher=None,
+               category=None,
+               fields=None):
+    """
+    指数基本信息
+    """
+
+    client = api_client()
+
+    return client.query('index_info',
+                        symbol=symbol,
+                        name=name,
+                        market=market,
+                        publisher=publisher,
+                        category=category,
+                        fields=fields)
+
+
+def index_daily(symbol=None,
+                trade_date=None,
+                start_date=None,
+                end_date=None,
+                fields=None):
+    """
+    指数日线行情
+    """
+
+    client = api_client()
+
+    return client.query('index_daily',
+                        symbol=symbol,
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def index_weekly(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    指数周线行情
+    """
+
+    client = api_client()
+
+    return client.query('index_weekly',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def index_monthly(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    指数月线行情
+    """
+
+    client = api_client()
+
+    return client.query('index_monthly',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def index_bar(symbol=None,
+              freq=None,
+              adjust=None,
+              trade_date=None,
+              start_date=None,
+              end_date=None,
+              fields=None):
+    """
+    指数通用行情
+    """
+
+    client = api_client()
+
+    return client.query('index_bar',
+                        symbol=symbol,
+                        freq=freq,
+                        adjust=adjust,
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def stock_info(symbol=None,
                exchange=None,
                market=None,
