@@ -159,14 +159,14 @@ def stock_info(symbol=None,
                         fields=fields)
 
 
-def normalize_symbol(symbols, fields=None):
+def normalize_stock_symbol(symbols, fields=None):
     """
-    格式化symbol
+    格式化股票symbol
     """
 
     client = api_client()
 
-    return client.query('normalize_symbol', symbols=symbols, fields=fields)
+    return client.query('normalize_stock_symbol', symbols=symbols, fields=fields)
 
 
 def stock_daily(symbol=None,

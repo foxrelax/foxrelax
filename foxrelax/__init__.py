@@ -10,7 +10,7 @@ from foxrelax.config import auth
 
 from foxrelax.api import (
     echo, trade_calendar, area, exchange_info, stock_info, adj_factor,
-    normalize_symbol, stock_daily, stock_weekly, stock_monthly, stock_bar,
+    normalize_stock_symbol, stock_daily, stock_weekly, stock_monthly, stock_bar,
     balance_sheet, income, cash_flow, industry_industry, industry_concept,
     industry_region, industry, industry_stock_industry, industry_stock_concept,
     industry_stock_region, industry_stock, stock_industry_industry,
