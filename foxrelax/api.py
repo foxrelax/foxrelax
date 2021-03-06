@@ -159,6 +159,16 @@ def stock_info(symbol=None,
                         fields=fields)
 
 
+def normalize_symbol(symbols, fields=None):
+    """
+    格式化股票, 指数symbol
+    """
+
+    client = api_client()
+
+    return client.query('normalize_symbol', symbols=symbols, fields=fields)
+
+
 def normalize_stock_symbol(symbols, fields=None):
     """
     格式化股票symbol
@@ -166,7 +176,21 @@ def normalize_stock_symbol(symbols, fields=None):
 
     client = api_client()
 
-    return client.query('normalize_stock_symbol', symbols=symbols, fields=fields)
+    return client.query('normalize_stock_symbol',
+                        symbols=symbols,
+                        fields=fields)
+
+
+def normalize_index_symbol(symbols, fields=None):
+    """
+    格式化指数symbol
+    """
+
+    client = api_client()
+
+    return client.query('normalize_index_symbol',
+                        symbols=symbols,
+                        fields=fields)
 
 
 def stock_daily(symbol=None,
@@ -244,6 +268,29 @@ def stock_bar(symbol=None,
     client = api_client()
 
     return client.query('stock_bar',
+                        symbol=symbol,
+                        freq=freq,
+                        adjust=adjust,
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+# pylint:disable=blacklisted-name
+def bar(symbol=None,
+        freq=None,
+        adjust=None,
+        trade_date=None,
+        start_date=None,
+        end_date=None,
+        fields=None):
+    """
+    通用行情
+    """
+
+    client = api_client()
+
+    return client.query('bar',
                         symbol=symbol,
                         freq=freq,
                         adjust=adjust,
