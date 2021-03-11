@@ -36,6 +36,33 @@ def limit_rise_fall_stat(fields=None):
     return client.query('limit_rise_fall_stat', fields=fields)
 
 
+def money_flow_hk(trade_date=None,
+                  start_date=None,
+                  end_date=None,
+                  fields=None):
+    """
+    沪深港通资金流向
+    """
+
+    client = api_client()
+
+    return client.query('money_flow_hk',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def money_flow_hk_stat(fields=None):
+    """
+    实时沪深港通资金流向
+    """
+
+    client = api_client()
+
+    return client.query('money_flow_hk_stat', fields=fields)
+
+
 def trade_calendar(start_date=None, end_date=None, fields=None):
     """
     交易日历
