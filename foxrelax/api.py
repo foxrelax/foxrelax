@@ -16,6 +16,26 @@ def echo(text=None, fields=None):
     return client.query('echo', text=text, fields=fields)
 
 
+def rise_fall_stat(fields=None):
+    """
+    实时涨跌分布
+    """
+
+    client = api_client()
+
+    return client.query('rise_fall_stat', fields=fields)
+
+
+def limit_rise_fall_stat(fields=None):
+    """
+    实时涨跌停板
+    """
+
+    client = api_client()
+
+    return client.query('limit_rise_fall_stat', fields=fields)
+
+
 def trade_calendar(start_date=None, end_date=None, fields=None):
     """
     交易日历
@@ -275,6 +295,7 @@ def stock_bar(symbol=None,
                         start_date=start_date,
                         end_date=end_date,
                         fields=fields)
+
 
 # pylint:disable=blacklisted-name
 def bar(symbol=None,
