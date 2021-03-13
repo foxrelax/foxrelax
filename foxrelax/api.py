@@ -16,6 +16,25 @@ def echo(text=None, fields=None):
     return client.query('echo', text=text, fields=fields)
 
 
+def news_flash(channel=None,
+               news_date=None,
+               start_date=None,
+               end_date=None,
+               fields=None):
+    """
+    新闻快讯
+    """
+
+    client = api_client()
+
+    return client.query('news_flash',
+                        channel=channel,
+                        news_date=news_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def rise_fall_stat(fields=None):
     """
     实时涨跌分布
