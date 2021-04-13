@@ -306,6 +306,48 @@ def stock_monthly(symbol=None, start_date=None, end_date=None, fields=None):
                         fields=fields)
 
 
+def valuation(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    估值指标
+    """
+
+    client = api_client()
+
+    return client.query('valuation',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def dividend(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    分红送股
+    """
+
+    client = api_client()
+
+    return client.query('dividend',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def capital_change(symbol=None, start_date=None, end_date=None, fields=None):
+    """
+    股本变动
+    """
+
+    client = api_client()
+
+    return client.query('capital_change',
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
 def adj_factor(symbol=None, start_date=None, end_date=None, fields=None):
     """
     股票复权信息
