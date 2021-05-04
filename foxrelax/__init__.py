@@ -11,8 +11,8 @@ from foxrelax.config import auth
 from foxrelax.api import (
     echo, trade_calendar, area, exchange_info, stock_info, valuation, dividend,
     capital_change, adj_factor, bar, index_info, index_daily, index_weekly,
-    index_monthly, index_bar, money_flow_hk, money_flow_hk_stat,
-    rise_fall_stat, limit_rise_fall_stat, normalize_symbol,
+    index_monthly, index_bar, money_flow_hk, money_flow_hk_realtime,
+    rise_fall_realtime, limit_rise_fall_realtime, normalize_symbol,
     normalize_stock_symbol, normalize_index_symbol, news_flash, stock_daily,
     stock_weekly, stock_monthly, stock_bar, balance_sheet, income, cash_flow,
     industry_industry, industry_concept, industry_region, industry,

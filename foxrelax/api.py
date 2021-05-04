@@ -35,24 +35,24 @@ def news_flash(channel=None,
                         fields=fields)
 
 
-def rise_fall_stat(fields=None):
+def rise_fall_realtime(fields=None):
     """
     实时涨跌分布
     """
 
     client = api_client()
 
-    return client.query('rise_fall_stat', fields=fields)
+    return client.query('rise_fall_realtime', fields=fields)
 
 
-def limit_rise_fall_stat(fields=None):
+def limit_rise_fall_realtime(fields=None):
     """
     实时涨跌停板
     """
 
     client = api_client()
 
-    return client.query('limit_rise_fall_stat', fields=fields)
+    return client.query('limit_rise_fall_realtime', fields=fields)
 
 
 def money_flow_hk(trade_date=None,
@@ -72,14 +72,14 @@ def money_flow_hk(trade_date=None,
                         fields=fields)
 
 
-def money_flow_hk_stat(fields=None):
+def money_flow_hk_realtime(fields=None):
     """
     实时沪深港通资金流向
     """
 
     client = api_client()
 
-    return client.query('money_flow_hk_stat', fields=fields)
+    return client.query('money_flow_hk_realtime', fields=fields)
 
 
 def trade_calendar(start_date=None, end_date=None, fields=None):
