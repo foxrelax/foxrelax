@@ -55,31 +55,133 @@ def limit_rise_fall_realtime(fields=None):
     return client.query('limit_rise_fall_realtime', fields=fields)
 
 
-def money_flow_hk(trade_date=None,
-                  start_date=None,
-                  end_date=None,
-                  fields=None):
+def manufacturing_pmi_monthly(trade_date=None,
+                              start_date=None,
+                              end_date=None,
+                              fields=None):
     """
-    沪深港通资金流向
+    制造业PMI(月度)
     """
 
     client = api_client()
 
-    return client.query('money_flow_hk',
+    return client.query('manufacturing_pmi_monthly',
                         trade_date=trade_date,
                         start_date=start_date,
                         end_date=end_date,
                         fields=fields)
 
 
-def money_flow_hk_realtime(fields=None):
+def ppi_monthly(trade_date=None, start_date=None, end_date=None, fields=None):
     """
-    实时沪深港通资金流向
+    工业品出厂价格指数(月度)
     """
 
     client = api_client()
 
-    return client.query('money_flow_hk_realtime', fields=fields)
+    return client.query('ppi_monthly',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def cci_monthly(trade_date=None, start_date=None, end_date=None, fields=None):
+    """
+    消费者信心指数(月度)
+    """
+
+    client = api_client()
+
+    return client.query('cci_monthly',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def stock_trade_monthly(trade_date=None,
+                        start_date=None,
+                        end_date=None,
+                        fields=None):
+    """
+    全国股票交易统计(月度)
+    """
+
+    client = api_client()
+
+    return client.query('stock_trade_monthly',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def north_top10(trade_date=None,
+                exchange=None,
+                start_date=None,
+                end_date=None,
+                fields=None):
+    """
+    北向资金十大成交股
+    """
+
+    client = api_client()
+
+    return client.query('north_top10',
+                        trade_date=trade_date,
+                        exchange=exchange,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def north_money(trade_date=None, start_date=None, end_date=None, fields=None):
+    """
+    北向资金流向
+    """
+
+    client = api_client()
+
+    return client.query('north_money',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def south_money(trade_date=None, start_date=None, end_date=None, fields=None):
+    """
+    南向资金流向
+    """
+
+    client = api_client()
+
+    return client.query('south_money',
+                        trade_date=trade_date,
+                        start_date=start_date,
+                        end_date=end_date,
+                        fields=fields)
+
+
+def north_money_realtime(fields=None):
+    """
+    实时北向资金流向
+    """
+
+    client = api_client()
+
+    return client.query('north_money_realtime', fields=fields)
+
+
+def south_money_realtime(fields=None):
+    """
+    实时南向资金流向
+    """
+
+    client = api_client()
+
+    return client.query('south_money_realtime', fields=fields)
 
 
 def trade_calendar(start_date=None, end_date=None, fields=None):
@@ -635,7 +737,10 @@ def money_supply(start_date=None, end_date=None, fields=None):
                         fields=fields)
 
 
-def reserve_ratio(start_date=None, end_date=None, fields=None):
+def reserve_ratio(trade_date=None,
+                  start_date=None,
+                  end_date=None,
+                  fields=None):
     """
     存款准备金率
     """
@@ -643,19 +748,24 @@ def reserve_ratio(start_date=None, end_date=None, fields=None):
     client = api_client()
 
     return client.query('reserve_ratio',
+                        trade_date=trade_date,
                         start_date=start_date,
                         end_date=end_date,
                         fields=fields)
 
 
-def gold_foreign_reserve(start_date=None, end_date=None, fields=None):
+def gold_foreign_reserve_monthly(trade_date=None,
+                                 start_date=None,
+                                 end_date=None,
+                                 fields=None):
     """
-    央行黄金和外汇储备
+    黄金和外汇储备(月度)
     """
 
     client = api_client()
 
-    return client.query('gold_foreign_reserve',
+    return client.query('gold_foreign_reserve_monthly',
+                        trade_date=trade_date,
                         start_date=start_date,
                         end_date=end_date,
                         fields=fields)
