@@ -16,6 +16,16 @@ def echo(text=None, fields=None):
     return client.query('echo', text=text, fields=fields)
 
 
+def ml_data(path=None, fmt='csv', fields=None):
+    """
+    machine learn datasets
+    """
+
+    client = api_client()
+
+    return client.query('ml_data', path=path, fmt=fmt, fields=fields)
+
+
 def news_flash(channel=None,
                news_date=None,
                start_date=None,
