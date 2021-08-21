@@ -9,6 +9,13 @@ import torchvision
 from torch import nn
 from torch.utils import data
 from torchvision import transforms
+from foxrelax.api import ml_data
+
+
+def load_data(path=None, fmt='csv'):
+    """load ml data."""
+    resp = ml_data(path, fmt)
+    return resp.result
 
 
 def use_svg_display():
@@ -16,7 +23,7 @@ def use_svg_display():
     display.set_matplotlib_formats('svg')
 
 
-def set_figsize(figsize=(3.5, 2.5)):
+def set_figsize(figsize=(6, 4)):
     """Set the figure size for matplotlib."""
     use_svg_display()
     plt.rcParams['figure.figsize'] = figsize
@@ -45,7 +52,7 @@ def plot(X,
          xscale='linear',
          yscale='linear',
          fmts=('-', 'm--', 'g-.', 'r:'),
-         figsize=(3.5, 2.5),
+         figsize=(6, 4),
          axes=None):
     """Plot data points."""
     if legend is None:
@@ -261,7 +268,7 @@ class Animator:
                  fmts=('-', 'm--', 'g-.', 'r:'),
                  nrows=1,
                  ncols=1,
-                 figsize=(3.5, 2.5)):
+                 figsize=(6, 4)):
         # Incrementally plot multiple lines
         if legend is None:
             legend = []
