@@ -22,12 +22,10 @@ DATA_HUB['logistic_regression_unseparable'] = (
 DATA_HUB['logistic_regression_separable'] = (
     'csv', '/ml/logistic_regression_separable.csv',
     '97ff298c6aed70329f6f28757de04759f5600956')
-DATA_HUB['kaggle_house_pred_train'] = (
-    'csv', '/ml/kaggle_house_pred_train.csv',
-    '585e9cc93e70b39160e7921475f9bcd7d31219ce')
-DATA_HUB['kaggle_house_pred_test'] = (
-    'csv', '/ml/kaggle_house_pred_test.csv',
-    'fa19780a7b011d9b009e8bff8e99922a8ee2eb90')
+DATA_HUB['kaggle_house_train'] = ('csv', '/ml/kaggle_house_pred_train.csv',
+                                  '585e9cc93e70b39160e7921475f9bcd7d31219ce')
+DATA_HUB['kaggle_house_test'] = ('csv', '/ml/kaggle_house_pred_test.csv',
+                                 'fa19780a7b011d9b009e8bff8e99922a8ee2eb90')
 
 
 def download(name, cache_dir=os.path.join('..', 'data')):
