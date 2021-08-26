@@ -1,5 +1,8 @@
 # -*- coding:utf-8 -*-
 import time
+import os
+import hashlib
+import requests
 import numpy as np
 import pandas as pd
 from IPython import display
@@ -11,11 +14,49 @@ from torch.utils import data
 from torchvision import transforms
 from foxrelax.api import ml_data
 
+DATA_URL = 'http://oss.foxrelax.com'
+DATA_HUB = dict()
+DATA_HUB['logistic_regression_unseparable'] = (
+    'csv', '/ml/logistic_regression_unseparable.csv',
+    'f7a9c08c4b11fa8e03367a996ac75e5539e25c36')
+DATA_HUB['logistic_regression_separable'] = (
+    'csv', '/ml/logistic_regression_separable.csv',
+    '97ff298c6aed70329f6f28757de04759f5600956')
+DATA_HUB['kaggle_house_pred_train'] = (
+    'csv', '/ml/kaggle_house_pred_train.csv',
+    '585e9cc93e70b39160e7921475f9bcd7d31219ce')
+DATA_HUB['kaggle_house_pred_test'] = (
+    'csv', '/ml/kaggle_house_pred_test.csv',
+    'fa19780a7b011d9b009e8bff8e99922a8ee2eb90')
 
-def load_data(path=None, fmt='csv'):
+
+def download(name, cache_dir=os.path.join('..', 'data')):
+    assert name in DATA_HUB, f"{name} 不存在"
+    fmt, url, sha1_hash = DATA_HUB[name]
+    url = DATA_URL + url
+    os.makedirs(cache_dir, exist_ok=True)
+    fname = os.path.join(cache_dir, url.split('/')[-1])
+    if os.path.exists(fname):
+        sha1 = hashlib.sha1()
+        with open(fname, 'rb') as f:
+            while True:
+                data = f.read(1048576)
+                if not data:
+                    break
+                sha1.update(data)
+        if sha1.hexdigest() == sha1_hash:
+            return fname
+    print(f'正在从{url}下载{fname}...')
+    r = requests.get(url, stream=True, verify=True)
+    with open(fname, 'wb') as f:
+        f.write(r.content)
+    print(f'下载{fname}完成!')
+    return fname
+
+
+def load_data(name, cache_dir=os.path.join('..', 'data')):
     """load ml data."""
-    resp = ml_data(path, fmt)
-    return resp.result
+    return pd.read_csv(download(name, cache_dir))
 
 
 def use_svg_display():
