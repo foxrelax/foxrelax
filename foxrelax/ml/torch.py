@@ -168,6 +168,17 @@ def squared_loss(y_hat, y):
     return (y_hat - y.reshape(y_hat.shape))**2 / 2
 
 
+def evaluate_loss(net, data_iter, loss):
+    """Evaluate the loss of a model on the given dataset."""
+    metric = Accumulator(2)  # Sum of losses, no. of examples
+    for X, y in data_iter:
+        out = net(X)
+        y = y.reshape(out.shape)
+        l = loss(out, y)
+        metric.add(l.sum(), l.numel())
+    return metric[0] / metric[1]
+
+
 def sgd(params, lr, batch_size):
     """Minibatch stochastic gradient descent."""
     with torch.no_grad():
