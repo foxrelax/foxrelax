@@ -469,12 +469,12 @@ class Vocab:
         return self.token_to_idx['<unk>']
 
 
-def load_corpus_time_machine(max_tokens=-1):
+def load_corpus_time_machine(max_tokens=-1, token='word'):
     """返回时光机器数据集的词元索引列表和词汇表"""
     with open(download('time_machine'), 'r') as f:
         lines = f.readlines()
     lines = [re.sub('[^A-Za-z]+', ' ', line).strip().lower() for line in lines]
-    tokens = tokenize(lines, 'word')
+    tokens = tokenize(lines, token)
     vocab = Vocab(tokens)
     # 因为时光机器数据集中的每个文本行不一定是一个句子或一个段落,
     # 所以将所有文本行展平到一个列表中
@@ -527,12 +527,13 @@ def seq_data_iter_sequential(corpus, batch_size, num_steps):
 
 class SeqDataLoader:
     """加载序列数据的迭代器"""
-    def __init__(self, batch_size, num_steps, use_random_iter, max_tokens):
+    def __init__(self, batch_size, num_steps, use_random_iter, max_tokens,
+                 token):
         if use_random_iter:
             self.data_iter_fn = seq_data_iter_random
         else:
             self.data_iter_fn = seq_data_iter_sequential
-        self.corpus, self.vocab = load_corpus_time_machine(max_tokens)
+        self.corpus, self.vocab = load_corpus_time_machine(max_tokens, token)
         self.batch_size, self.num_steps = batch_size, num_steps
 
     def __iter__(self):
@@ -542,7 +543,8 @@ class SeqDataLoader:
 def load_data_time_machine(batch_size,
                            num_steps,
                            use_random_iter=False,
-                           max_tokens=100000):
+                           max_tokens=100000,
+                           token='word'):
     data_iter = SeqDataLoader(batch_size, num_steps, use_random_iter,
-                              max_tokens)
+                              max_tokens, token)
     return data_iter, data_iter.vocab
