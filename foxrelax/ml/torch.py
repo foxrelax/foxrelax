@@ -36,7 +36,7 @@ DATA_HUB['kaggle_house_test'] = ('csv', '/ml/kaggle_house_pred_test.csv',
 DATA_HUB['time_machine'] = ('txt', '/ml/time_machine.txt',
                             '090b5e7e70c295757f55df93cb0a180b9691891a')
 DATA_HUB['fra_eng'] = ('zip', '/ml/fra_eng.zip',
-                       '94646ad1522d915e7b0f9296181140edcf86a4f5')
+                       '02eee9efbc64e076be914c6c163740dd5d448b36')
 
 
 def download(name, cache_dir=os.path.join('..', 'data')):
