@@ -6,6 +6,8 @@ import collections
 import random
 import math
 import hashlib
+import tarfile
+import zipfile
 import requests
 import numpy as np
 import pandas as pd
@@ -33,6 +35,8 @@ DATA_HUB['kaggle_house_test'] = ('csv', '/ml/kaggle_house_pred_test.csv',
                                  'fa19780a7b011d9b009e8bff8e99922a8ee2eb90')
 DATA_HUB['time_machine'] = ('txt', '/ml/time_machine.txt',
                             '090b5e7e70c295757f55df93cb0a180b9691891a')
+DATA_HUB['fra_eng'] = ('zip', '/ml/fra_eng.zip',
+                       '94646ad1522d915e7b0f9296181140edcf86a4f5')
 
 
 def download(name, cache_dir=os.path.join('..', 'data')):
@@ -57,6 +61,35 @@ def download(name, cache_dir=os.path.join('..', 'data')):
         f.write(r.content)
     print(f'下载{fname}完成!')
     return fname
+
+
+def extract(filename, folder=None):
+    """Download and extract a zip/tar file"""
+    base_dir = os.path.dirname(filename)
+    _, ext = os.path.splitext(filename)
+    assert ext in ('.zip', '.tar', '.gz'), 'Only support zip/tar files.'
+    if ext == '.zip':
+        fp = zipfile.ZipFile(filename, 'r')
+    else:
+        fp = tarfile.open(filename, 'r')
+    if folder is None:
+        folder = base_dir
+    fp.extractall(folder)
+
+
+def download_extract(name, folder=None):
+    """Download and extract a zip/tar file"""
+    fname = download(name)
+    base_dir = os.path.dirname(fname)
+    data_dir, ext = os.path.splitext(fname)
+    if ext == '.zip':
+        fp = zipfile.ZipFile(fname, 'r')
+    elif ext in ('.tar', '.gz'):
+        fp = tarfile.open(fname, 'r')
+    else:
+        assert False, 'Only zip/tar files can be extracted.'
+    fp.extractall(base_dir)
+    return os.path.join(base_dir, folder) if folder else data_dir
 
 
 def load_data(name, cache_dir=os.path.join('..', 'data')):
@@ -590,6 +623,105 @@ def rnn(inputs, state, params):
         Y = torch.mm(H, W_hq) + b_q
         outputs.append(Y)
     return torch.cat(outputs, dim=0), (H, )
+
+
+def get_gru_params(vocab_size, num_hiddens, device):
+    num_inputs = num_outputs = vocab_size
+
+    def normal(shape):
+        return torch.randn(size=shape, device=device) * 0.01
+
+    def three():
+        return (normal(
+            (num_inputs, num_hiddens)), normal((num_hiddens, num_hiddens)),
+                torch.zeros(num_hiddens, device=device))
+
+    W_xz, W_hz, b_z = three()  # 更新门参数
+    W_xr, W_hr, b_r = three()  # 重置门参数
+    W_xh, W_hh, b_h = three()  # 候选隐藏状态参数
+
+    # 输出层参数
+    W_hq = normal((num_hiddens, num_outputs))
+    b_q = torch.zeros(num_outputs, device=device)
+
+    # 附加梯度
+    params = [W_xz, W_hz, b_z, W_xr, W_hr, b_r, W_xh, W_hh, b_h, W_hq, b_q]
+    for param in params:
+        param.requires_grad_(True)
+    return params
+
+
+def init_gru_state(batch_size, num_hiddens, device):
+    return (torch.zeros((batch_size, num_hiddens), device=device), )
+
+
+def gru(inputs, state, params):
+    # `inputs`的形状:(`时间步数量`，`批量大小`，`词表大小`)
+    W_xz, W_hz, b_z, W_xr, W_hr, b_r, W_xh, W_hh, b_h, W_hq, b_q = params
+    H, = state
+    outputs = []
+    # `X`的形状:(`批量大小`，`词表大小`)
+    for X in inputs:
+        Z = torch.sigmoid((X @ W_xz) + (H @ W_hz) + b_z)
+        R = torch.sigmoid((X @ W_xr) + (H @ W_hr) + b_r)
+        H_tilda = torch.tanh((X @ W_xh) + ((R * H) @ W_hh) + b_h)
+        H = Z * H + (1 - Z) * H_tilda
+        Y = H @ W_hq + b_q
+        outputs.append(Y)
+    return torch.cat(outputs, dim=0), (H, )
+
+
+def get_lstm_params(vocab_size, num_hiddens, device):
+    num_inputs = num_outputs = vocab_size
+
+    def normal(shape):
+        return torch.randn(size=shape, device=device) * 0.01
+
+    def three():
+        return (normal(
+            (num_inputs, num_hiddens)), normal((num_hiddens, num_hiddens)),
+                torch.zeros(num_hiddens, device=device))
+
+    W_xi, W_hi, b_i = three()  # 输入门参数
+    W_xf, W_hf, b_f = three()  # 遗忘门参数
+    W_xo, W_ho, b_o = three()  # 输出门参数
+    W_xc, W_hc, b_c = three()  # 候选记忆状态参数
+
+    # 输出层参数
+    W_hq = normal((num_hiddens, num_outputs))
+    b_q = torch.zeros(num_outputs, device=device)
+
+    # 附加梯度
+    params = [
+        W_xi, W_hi, b_i, W_xf, W_hf, b_f, W_xo, W_ho, b_o, W_xc, W_hc, b_c,
+        W_hq, b_q
+    ]
+    for param in params:
+        param.requires_grad_(True)
+    return params
+
+
+def init_lstm_state(batch_size, num_hiddens, device):
+    return (torch.zeros((batch_size, num_hiddens), device=device),
+            torch.zeros((batch_size, num_hiddens), device=device))
+
+
+def lstm(inputs, state, params):
+    # `inputs`的形状:(`时间步数量`，`批量大小`，`词表大小`)
+    W_xi, W_hi, b_i, W_xf, W_hf, b_f, W_xo, W_ho, b_o, W_xc, W_hc, b_c, W_hq, b_q = params
+    (H, C) = state
+    outputs = []
+    # `X`的形状:(`批量大小`，`词表大小`)
+    for X in inputs:
+        I = torch.sigmoid((X @ W_xi) + (H @ W_hi) + b_i)
+        F = torch.sigmoid((X @ W_xf) + (H @ W_hf) + b_f)
+        O = torch.sigmoid((X @ W_xo) + (H @ W_ho) + b_o)
+        C_tilda = torch.tanh((X @ W_xc) + (H @ W_hc) + b_c)
+        C = F * C + I * C_tilda
+        H = O * torch.tanh(C)
+        Y = H @ W_hq + b_q
+        outputs.append(Y)
+    return torch.cat(outputs, dim=0), (H, C)
 
 
 class RNNModelScratch:
