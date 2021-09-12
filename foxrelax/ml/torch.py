@@ -191,7 +191,7 @@ class Timer:
 
 
 def synthetic_data(w, b, num_examples):
-    """Generate y = Xw + b + noise."""
+    """生成 y = Xw + b + 噪声"""
     X = torch.normal(0, 1, (num_examples, len(w)))
     y = torch.matmul(X, w) + b
     y += torch.normal(0, 0.01, y.shape)
@@ -199,12 +199,12 @@ def synthetic_data(w, b, num_examples):
 
 
 def linreg(X, w, b):
-    """The linear regression model."""
+    """线性回归模型"""
     return torch.matmul(X, w) + b
 
 
 def squared_loss(y_hat, y):
-    """Squared loss."""
+    """均方损失"""
     return (y_hat - y.reshape(y_hat.shape))**2 / 2
 
 
@@ -220,7 +220,7 @@ def evaluate_loss(net, data_iter, loss):
 
 
 def sgd(params, lr, batch_size):
-    """Minibatch stochastic gradient descent."""
+    """小批量梯度下降"""
     with torch.no_grad():
         for param in params:
             param -= lr * param.grad / batch_size
@@ -1139,3 +1139,40 @@ def bleu(pred_seq, label_seq, k):
                 label_subs[''.join(pred_tokens[i:i + n])] -= 1
         score *= math.pow(num_matches / (len_pred - n + 1), math.pow(0.5, n))
     return score
+
+
+def annotate(text, xy, xytext):
+    plt.gca().annotate(text, xy, xytext, arrowprops=dict(arrowstyle='->'))
+
+
+def show_trace(results, f):
+    n = max(abs(min(results)), abs(max(results)))
+    f_line = torch.arange(-n, n, 0.01)
+    plot([f_line, results], [[f(x) for x in f_line], [f(x) for x in results]],
+         'x',
+         'f(x)',
+         fmts=['-', '-o'])
+
+
+def train_2d(trainer, steps=20, f_grad=None):
+    """用定制的训练机优化2D目标函数"""
+    x1, x2, s1, s2 = -5, -2, 0, 0
+    results = [(x1, x2)]
+    for i in range(steps):
+        if f_grad:
+            x1, x2, s1, s2 = trainer(x1, x2, s1, s2, f_grad)
+        else:
+            x1, x2, s1, s2 = trainer(x1, x2, s1, s2)
+        results.append((x1, x2))
+    print(f'epoch {i + 1}, x1: {float(x1):f}, x2: {float(x2):f}')
+    return results
+
+
+def show_trace_2d(results, f):
+    """显示优化过程中2D变量的轨迹"""
+    plt.plot(*zip(*results), '-o', color='#ff7f0e')
+    x1, x2 = torch.meshgrid(torch.arange(-5.5, 1.0, 0.1),
+                            torch.arange(-3.0, 1.0, 0.1))
+    plt.contour(x1, x2, f(x1, x2), colors='#1f77b4')
+    plt.xlabel('x1')
+    plt.ylabel('x2')
