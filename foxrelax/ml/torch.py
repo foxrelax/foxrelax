@@ -228,13 +228,13 @@ def sgd(params, lr, batch_size):
 
 
 def load_array(data_arrays, batch_size, is_train=True):
-    """Construct a PyTorch data iterator."""
+    """构造一个PyTorch数据迭代器"""
     dataset = data.TensorDataset(*data_arrays)
     return data.DataLoader(dataset, batch_size, shuffle=is_train)
 
 
 def get_fashion_mnist_labels(labels):
-    """Return text labels for the Fashion-MNIST dataset"""
+    """返回Fashion-MNIST数据集的文本标签"""
     text_labels = [
         't-shirt', 'trouser', 'pullover', 'dress', 'coat', 'sandal', 'shirt',
         'sneaker', 'bag', 'ankle boot'
@@ -243,13 +243,13 @@ def get_fashion_mnist_labels(labels):
 
 
 def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):
-    """Plot a list of images."""
+    """Plot a list of images"""
     figsize = (num_cols * scale, num_rows * scale)
     _, axes = plt.subplots(num_rows, num_cols, figsize=figsize)
     axes = axes.flatten()
     for i, (ax, img) in enumerate(zip(axes, imgs)):
         if torch.is_tensor(img):
-            # Tensor Image
+            # 图片张量
             ax.imshow(img.numpy())
         else:
             # PIL Image
@@ -261,13 +261,15 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):
     return axes
 
 
-def get_dataloader_workers(num_workers=4):
-    """Use multi processes to read the data."""
+def get_dataloader_workers(num_workers=2):
+    """Use multi processes to read the data"""
     return num_workers
 
 
 def load_data_mnist(batch_size, resize=None, root='../data'):
-    """Download the MNIST dataset and then load it into memory."""
+    """下载MNIST数据集, 然后将其加载到内存中"""
+    # 通过ToTensor实例将图像数据从PIL类型变换成32位浮点数格式
+    # 并除以255使得所有像素的数值均在0到1之间
     trans = [transforms.ToTensor()]
     if resize:
         trans.insert(0, transforms.Resize(resize))
@@ -291,7 +293,9 @@ def load_data_mnist(batch_size, resize=None, root='../data'):
 
 
 def load_data_fashion_mnist(batch_size, resize=None, root='../data'):
-    """Download the Fashion-MNIST dataset and then load it into memory."""
+    """下载Fashion-MNIST数据集, 然后将其加载到内存中"""
+    # 通过ToTensor实例将图像数据从PIL类型变换成32位浮点数格式
+    # 并除以255使得所有像素的数值均在0到1之间
     trans = [transforms.ToTensor()]
     if resize:
         trans.insert(0, transforms.Resize(resize))
@@ -330,7 +334,7 @@ class Accumulator:
 
 
 def accuracy(y_hat, y):
-    """Compute the number of correct predictions."""
+    """计算预测正确的数量"""
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
         y_hat = y_hat.argmax(axis=1)
     cmp = y_hat.type(y.dtype) == y
@@ -338,7 +342,7 @@ def accuracy(y_hat, y):
 
 
 def evaluate_accuracy(net, data_iter):
-    """Compute the accuracy for a model on a dataset."""
+    """计算在指定数据集上模型的精度"""
     if isinstance(net, torch.nn.Module):
         net.eval()  # Set the model to evaluation mode
     metric = Accumulator(2)  # No. of correct predictions, no. of predictions
@@ -370,7 +374,7 @@ def evaluate_accuracy_gpu(net, data_iter, device=None):
 
 
 class Animator:
-    """For plotting data in animation."""
+    """在动画中绘制数据"""
     def __init__(self,
                  xlabel=None,
                  ylabel=None,
@@ -383,7 +387,7 @@ class Animator:
                  nrows=1,
                  ncols=1,
                  figsize=(6, 4)):
-        # Incrementally plot multiple lines
+        # 增量地绘制多条线
         if legend is None:
             legend = []
         use_svg_display()
@@ -392,13 +396,13 @@ class Animator:
             self.axes = [
                 self.axes,
             ]
-        # Use a lambda function to capture arguments
+        # 使用lambda函数捕获参数
         self.config_axes = lambda: set_axes(self.axes[0], xlabel, ylabel, xlim,
                                             ylim, xscale, yscale, legend)
         self.X, self.Y, self.fmts = None, None, fmts
 
     def add(self, x, y):
-        # Add multiple data points into the figure
+        # # 向图表中添加多个数据点
         if not hasattr(y, "__len__"):
             y = [y]
         n = len(y)
@@ -444,11 +448,11 @@ def train_gpu(net, train_iter, test_iter, loss, num_epochs, lr, device=None):
         if type(m) == nn.Linear or type(m) == nn.Conv2d:
             nn.init.xavier_uniform_(m.weight)
 
-    net.apply(init_weights)
+    if isinstance(net, nn.Module):
+        net.apply(init_weights)
     print('training on', device)
     net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
-    loss = nn.CrossEntropyLoss()
     animator = Animator(xlabel='epoch',
                         xlim=[1, num_epochs],
                         legend=['train loss', 'train acc', 'test acc'])
