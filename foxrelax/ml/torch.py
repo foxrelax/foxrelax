@@ -209,8 +209,8 @@ def squared_loss(y_hat, y):
 
 
 def evaluate_loss(net, data_iter, loss):
-    """Evaluate the loss of a model on the given dataset."""
-    metric = Accumulator(2)  # Sum of losses, no. of examples
+    """评估给定数据集上模型的损失"""
+    metric = Accumulator(2)  # 损失的总和, 样本数量
     for X, y in data_iter:
         out = net(X)
         y = y.reshape(out.shape)
@@ -448,8 +448,7 @@ def train_gpu(net, train_iter, test_iter, loss, num_epochs, lr, device=None):
         if type(m) == nn.Linear or type(m) == nn.Conv2d:
             nn.init.xavier_uniform_(m.weight)
 
-    if isinstance(net, nn.Module):
-        net.apply(init_weights)
+    net.apply(init_weights)
     print('training on', device)
     net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
