@@ -424,6 +424,10 @@ class Animator:
         display.clear_output(wait=True)
 
 
+def cpu():
+    return torch.device('cpu')
+
+
 def try_gpu(i=0):
     """Return gpu(i) if exists, otherwise return cpu()."""
     if torch.cuda.device_count() >= i + 1:
@@ -440,7 +444,7 @@ def try_all_gpus():
 
 
 def train_gpu(net, train_iter, test_iter, loss, num_epochs, lr, device=None):
-    """Train a model with a GPU"""
+    """用GPU训练模型"""
     if device is None:
         device = try_gpu()
 
@@ -457,7 +461,7 @@ def train_gpu(net, train_iter, test_iter, loss, num_epochs, lr, device=None):
                         legend=['train loss', 'train acc', 'test acc'])
     timer, num_batches = Timer(), len(train_iter)
     for epoch in range(num_epochs):
-        # Sum of training loss, sum of training accuracy, no. of examples
+        # 训练损失之和, 训练准确率之和, 范例数
         metric = Accumulator(3)
         net.train()
         for i, (X, y) in enumerate(train_iter):
@@ -1179,3 +1183,63 @@ def show_trace_2d(results, f):
     plt.contour(x1, x2, f(x1, x2), colors='#1f77b4')
     plt.xlabel('x1')
     plt.ylabel('x2')
+
+
+def corr2d(X, K):
+    """计算二维互相关运算"""
+    h, w = K.shape
+    Y = torch.zeros((X.shape[0] - h + 1, X.shape[1] - w + 1))
+    for i in range(Y.shape[0]):
+        for j in range(Y.shape[1]):
+            Y[i, j] = (X[i:i + h, j:j + w] * K).sum()
+    return Y
+
+
+class Benchmark:
+    """For measuring running time."""
+    def __init__(self, description='Done'):
+        """Defined in :numref:`sec_hybridize`"""
+        self.description = description
+
+    def __enter__(self):
+        self.timer = Timer()
+        return self
+
+    def __exit__(self, *args):
+        print(f'{self.description}: {self.timer.stop():.4f} sec')
+
+
+class Residual(nn.Module):
+    """The Residual block of ResNet"""
+    def __init__(self,
+                 input_channels,
+                 num_channels,
+                 use_1x1conv=False,
+                 stride=1):
+        super().__init__()
+        self.conv1 = nn.Conv2d(input_channels,
+                               num_channels,
+                               kernel_size=3,
+                               padding=1,
+                               stride=stride)
+        self.conv2 = nn.Conv2d(num_channels,
+                               num_channels,
+                               kernel_size=3,
+                               padding=1)
+        if use_1x1conv:
+            self.conv3 = nn.Conv2d(input_channels,
+                                   num_channels,
+                                   kernel_size=1,
+                                   stride=stride)
+        else:
+            self.conv3 = None
+        self.bn1 = nn.BatchNorm2d(num_channels)
+        self.bn2 = nn.BatchNorm2d(num_channels)
+
+    def forward(self, X):
+        Y = F.relu(self.bn1(self.conv1(X)))
+        Y = self.bn2(self.conv2(Y))
+        if self.conv3:
+            X = self.conv3(X)
+        Y += X
+        return F.relu(Y)
