@@ -19,7 +19,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils import data
 from torchvision import transforms
-from foxrelax.api import ml_data
 
 DATA_URL = 'http://oss.foxrelax.com'
 DATA_HUB = dict()
@@ -37,14 +36,25 @@ DATA_HUB['time_machine'] = ('txt', '/ml/time_machine.txt',
                             '090b5e7e70c295757f55df93cb0a180b9691891a')
 DATA_HUB['fra_eng'] = ('zip', '/ml/fra_eng.zip',
                        '02eee9efbc64e076be914c6c163740dd5d448b36')
+DATA_HUB['hotdog'] = ('zip', '/ml/hotdog.zip',
+                      'fba480ffa8aa7e0febbb511d181409f899b9baa5')
+DATA_HUB['img/cat1'] = ('jpg', '/ml/img/cat1.jpg',
+                        'f9c5b905d908b97eeeb64ff34a46fa8b143f88f8')
+DATA_HUB['img/cat2'] = ('jpg', '/ml/img/cat2.jpg',
+                        'b712adcb9ca6af53081bd96426b719573f40053e')
+DATA_HUB['img/cat3'] = ('jpg', '/ml/img/cat3.jpg',
+                        '80249a6aa841706d861f3f7efad582f6828ca3d0')
+DATA_HUB['img/catdog'] = ('jpg', '/ml/img/catdog.jpg',
+                          '60b7d540db03eef6b9834329bccc4417ef349bf6')
 
 
 def download(name, cache_dir=os.path.join('..', 'data')):
     assert name in DATA_HUB, f"{name} 不存在"
     fmt, url, sha1_hash = DATA_HUB[name]
     url = DATA_URL + url
-    os.makedirs(cache_dir, exist_ok=True)
-    fname = os.path.join(cache_dir, url.split('/')[-1])
+    fname = os.path.join(cache_dir, url.split('/ml/')[-1])
+    fdir = os.path.dirname(fname)
+    os.makedirs(fdir, exist_ok=True)
     if os.path.exists(fname):
         sha1 = hashlib.sha1()
         with open(fname, 'rb') as f:
@@ -857,7 +867,7 @@ def train_rnn_epoch(net, train_iter, loss, updater, device, use_random_iter):
                 # `state`对于`nn.LSTM`或对于我们从零开始实现的模型
                 for s in state:
                     s.detach_()
-        y = Y.T.reshape(-1)
+        y = Y.T.reshape(-1)  # 注意: 这里要拉平, 因为输出结果也是拉平的
         X, y = X.to(device), y.to(device)
         y_hat, state = net(X, state)
         l = loss(y_hat, y.long()).mean()
