@@ -328,6 +328,35 @@ def load_data_fashion_mnist(batch_size, resize=None, root='../data'):
                             num_workers=get_dataloader_workers()))
 
 
+def load_data_cifar10(batch_size,
+                      train_transform=None,
+                      test_transform=None,
+                      root='../data'):
+    """下载CIFAR10数据集, 然后将其加载到内存中"""
+    if train_transform is None:
+        train_transform = torchvision.transforms.Compose(
+            [torchvision.transforms.ToTensor()])
+    if test_transform is None:
+        test_transform = torchvision.transforms.Compose(
+            [torchvision.transforms.ToTensor()])
+    cifar10_train = torchvision.datasets.CIFAR10(root=root,
+                                                 train=True,
+                                                 transform=train_transform,
+                                                 download=True)
+    cifar10_test = torchvision.datasets.CIFAR10(root=root,
+                                                train=False,
+                                                transform=test_transform,
+                                                download=True)
+    return (data.DataLoader(cifar10_train,
+                            batch_size,
+                            shuffle=True,
+                            num_workers=get_dataloader_workers()),
+            data.DataLoader(cifar10_test,
+                            batch_size,
+                            shuffle=False,
+                            num_workers=get_dataloader_workers()))
+
+
 class Accumulator:
     """For accumulating sums over `n` variables."""
     def __init__(self, n):
@@ -1253,3 +1282,37 @@ class Residual(nn.Module):
             X = self.conv3(X)
         Y += X
         return F.relu(Y)
+
+
+def resnet_block(input_channels,
+                 num_channels,
+                 num_residuals,
+                 first_block=False):
+    blk = []
+    for i in range(num_residuals):
+        if i == 0 and not first_block:
+            blk.append(
+                Residual(input_channels,
+                         num_channels,
+                         use_1x1conv=True,
+                         stride=2))
+        else:
+            blk.append(Residual(num_channels, num_channels))
+    return nn.Sequential(*blk)
+
+
+def resnet18(num_classes, in_channels=1):
+    """一个简化版的ResNet-18 model"""
+    # This model uses a smaller convolution kernel, stride, and padding and
+    # removes the maximum pooling layer
+    net = nn.Sequential(
+        nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1),
+        nn.BatchNorm2d(64), nn.ReLU())
+    net.add_module('resnet_block1', resnet_block(64, 64, 2, first_block=True))
+    net.add_module('resnet_block2', resnet_block(64, 128, 2))
+    net.add_module('resnet_block3', resnet_block(128, 256, 2))
+    net.add_module('resnet_block4', resnet_block(256, 512, 2))
+    net.add_module('global_avg_pool', nn.AdaptiveAvgPool2d((1, 1)))
+    net.add_module('fc',
+                   nn.Sequential(nn.Flatten(), nn.Linear(512, num_classes)))
+    return net
