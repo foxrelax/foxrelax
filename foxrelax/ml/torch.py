@@ -38,6 +38,8 @@ DATA_HUB['fra_eng'] = ('zip', '/ml/fra_eng.zip',
                        '02eee9efbc64e076be914c6c163740dd5d448b36')
 DATA_HUB['hotdog'] = ('zip', '/ml/hotdog.zip',
                       'fba480ffa8aa7e0febbb511d181409f899b9baa5')
+DATA_HUB['banana_detection'] = ('zip', '/ml/banana_detection.zip',
+                                '068e13f04d30c8b96d30e490394ce9ab7cbdf2d5')
 DATA_HUB['img/cat1'] = ('jpg', '/ml/img/cat1.jpg',
                         'f9c5b905d908b97eeeb64ff34a46fa8b143f88f8')
 DATA_HUB['img/cat2'] = ('jpg', '/ml/img/cat2.jpg',
@@ -1357,3 +1359,155 @@ def bbox_to_rect(bbox, color):
                          fill=False,
                          edgecolor=color,
                          linewidth=2)
+
+
+def multibox_prior(data, sizes, ratios):
+    """生成以每个像素为中心具有不同形状的锚框"""
+    in_height, in_width = data.shape[-2:]
+    device, num_sizes, num_ratios = data.device, len(sizes), len(ratios)
+    boxes_per_pixel = (num_sizes + num_ratios - 1)  # 每个像素对应的box数量
+    size_tensor = torch.tensor(sizes, device=device)
+    ratio_tensor = torch.tensor(ratios, device=device)
+
+    # 为了将锚点移动到像素的中心, 需要设置偏移量
+    # 因为一个像素的的高为1且宽为1, 我们选择偏移我们的中心0.5
+    offset_h, offset_w = 0.5, 0.5
+    steps_h = 1.0 / in_height  # Scaled steps in y axis
+    steps_w = 1.0 / in_width  # Scaled steps in x axis
+
+    # 生成锚框的所有中心点, 取值范围: (0, 1)
+    # center_h.shape - (h, )
+    # center_w.shape - (w, )
+    # shift_x.shape - (h*w, )
+    # shift_y.shape - (h*w, )
+    center_h = (torch.arange(in_height, device=device) + offset_h) * steps_h
+    center_w = (torch.arange(in_width, device=device) + offset_w) * steps_w
+    shift_y, shift_x = torch.meshgrid(center_h, center_w)
+    shift_y, shift_x = shift_y.reshape(-1), shift_x.reshape(-1)
+
+    # 生成'boxes_per_pixel'个高和宽
+    # 之后用于创建锚框的四角坐标
+    # w.shape - (boxes_per_pixel, )
+    # h.shape - (boxes_per_pixel, )
+    w = torch.cat((size_tensor * torch.sqrt(ratio_tensor[0]),
+                     sizes[0] * torch.sqrt(ratio_tensor[1:])))\
+                     * in_height / in_width  # Handle rectangular inputs
+    h = torch.cat((size_tensor / torch.sqrt(ratio_tensor[0]),
+                   sizes[0] / torch.sqrt(ratio_tensor[1:])))
+
+    # 除以2来获得半高和半宽
+    # anchor_manipulations.shape - (boxes_per_pixel*h*w, 4)
+    anchor_manipulations = torch.stack(
+        (-w, -h, w, h)).T.repeat(in_height * in_width, 1) / 2
+
+    # 每个中心点都将有'boxes_per_pixel'个锚框，
+    # 所以生成含所有锚框中心的网格, 重复了'boxes_per_pixel'次
+    # out_grid.shape - (boxes_per_pixel*h*w, 4)
+    #
+    # 补充:
+    # 这里要注意repeat()和repeat_interleave()在行为上的区别, 也就是在元素排列方式上的不同
+    # 1. 将一个shape为(boxes_per_pixel, 4)的tensor通过repeat(h * w)
+    #    变为(boxes_per_pixel*h*w, 4)
+    # 2. 将一个shape为(h*w, 4)的tensor通过repeat_interleave(boxes_per_pixel)
+    #    变为(boxes_per_pixel*h*w, 4)
+    # 目的是为了让其对应逻辑元素对应, 之后可以相加
+    out_grid = torch.stack([shift_x, shift_y, shift_x, shift_y],
+                           dim=1).repeat_interleave(boxes_per_pixel, dim=0)
+
+    # output.shape - (boxes_per_pixel*h*w, 4)
+    output = out_grid + anchor_manipulations
+
+    # output.shape - (1, boxes_per_pixel*h*w, 4)
+    return output.unsqueeze(0)
+
+
+def show_bboxes(axes, bboxes, labels=None, colors=None):
+    """显示所有边界框"""
+    def _make_list(obj, default_values=None):
+        if obj is None:
+            obj = default_values
+        elif not isinstance(obj, (tuple, list)):
+            obj = [obj]
+        return obj
+
+    labels = _make_list(labels)
+    colors = _make_list(colors, ['b', 'g', 'r', 'm', 'c'])
+    for i, bbox in enumerate(bboxes):
+        color = colors[i % len(colors)]
+        rect = bbox_to_rect(bbox.detach().numpy(), color)
+        axes.add_patch(rect)
+        if labels and len(labels) > i:
+            text_color = 'k' if color == 'w' else 'w'
+            axes.text(rect.xy[0],
+                      rect.xy[1],
+                      labels[i],
+                      va='center',
+                      ha='center',
+                      fontsize=9,
+                      color=text_color,
+                      bbox=dict(facecolor=color, lw=0))
+
+
+# 目录结构(图片的尺寸都是256x256):
+# banana_detection/
+#   bananas_train/
+#     images/
+#       0.png
+#       1.png
+#       2.png
+#       ...
+#     label.csv
+#   bananas_val/
+#     images/
+#       0.png
+#       1.png
+#       2.png
+#       ...
+#     label.csv
+#
+# label.csv格式:
+# img_name,label,xmin,ymin,xmax,ymax
+# 0.png,0,104,20,143,58
+# 1.png,0,68,175,118,223
+def read_data_bananas(is_train=True):
+    """读取香蕉检测数据集中的图像和标签"""
+    data_dir = download_extract('banana_detection')
+    csv_fname = os.path.join(data_dir,
+                             'bananas_train' if is_train else 'bananas_val',
+                             'label.csv')
+    csv_data = pd.read_csv(csv_fname)
+    csv_data = csv_data.set_index('img_name')
+    images, targets = [], []
+    for img_name, target in csv_data.iterrows():
+        images.append(
+            torchvision.io.read_image(
+                os.path.join(data_dir,
+                             'bananas_train' if is_train else 'bananas_val',
+                             'images', f'{img_name}')))
+        # label,xmin,ymin,xmax,ymax
+        targets.append(list(target))
+    return images, torch.tensor(targets).unsqueeze(1) / 256
+
+
+class BananasDataset(torch.utils.data.Dataset):
+    """一个用于加载香蕉检测数据集的自定义数据集"""
+    def __init__(self, is_train):
+        self.features, self.labels = read_data_bananas(is_train)
+        print('read ' + str(len(self.features)) +
+              (f' training examples' if is_train else f' validation examples'))
+
+    def __getitem__(self, idx):
+        return (self.features[idx].float(), self.labels[idx])
+
+    def __len__(self):
+        return len(self.features)
+
+
+def load_data_bananas(batch_size):
+    """加载香蕉检测数据集"""
+    train_iter = torch.utils.data.DataLoader(BananasDataset(is_train=True),
+                                             batch_size,
+                                             shuffle=True)
+    val_iter = torch.utils.data.DataLoader(BananasDataset(is_train=False),
+                                           batch_size)
+    return train_iter, val_iter
