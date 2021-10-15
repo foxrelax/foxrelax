@@ -1,0 +1,29 @@
+[MESSAGES CONTROL]
+
+disable=invalid-name, # C0103
+        missing-docstring, # C0111
+        line-too-long, # C0301
+        inherit-non-class, # E0239
+        too-many-function-args, # E1121
+        c-extension-no-member, # I1101
+        no-self-use, # R0201
+        duplicate-code, # R0801
+        too-many-instance-attributes, # R0902
+        too-many-public-methods, # R0904
+        too-many-return-statements, # R0911
+        too-many-branches, # R0912
+        too-many-arguments, # R0913
+        too-many-locals, # R0914
+        too-many-statements, # R0915
+        no-else-return, # R1705
+        inconsistent-return-statements, # R1710
+        dangerous-default-value, # W0102
+        unnecessary-lambda, # W0108
+        eval-used, # W0123
+        attribute-defined-outside-init, # W0201
+        abstract-method, # W0223
+        global-statement, # W0603
+        bare-except, # W0702
+        broad-except, # W0703
+        logging-format-interpolation # W1202
+        
