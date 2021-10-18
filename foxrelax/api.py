@@ -229,7 +229,7 @@ def exchange_info(fields=None):
 
 def index_info(symbol=None,
                name=None,
-               market=None,
+               exchange=None,
                publisher=None,
                category=None,
                fields=None):
@@ -242,7 +242,7 @@ def index_info(symbol=None,
     return client.query('index_info',
                         symbol=symbol,
                         name=name,
-                        market=market,
+                        exchange=exchange,
                         publisher=publisher,
                         category=category,
                         fields=fields)
