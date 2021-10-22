@@ -1,9 +1,13 @@
 # -*- coding:utf-8 -*-
 
 import copy
-from foxrelax.go.gotypes import Player
+from foxrelax.go.gotypes import (Point, Player)
 
 __all__ = ['Board', 'GameState', 'Move']
+
+
+class IllegalMoveError(Exception):
+    pass
 
 
 class Move:
@@ -16,7 +20,7 @@ class Move:
     遵循美国围棋协会(AGA)的惯例, 我们使用术语动作(move)来表示这三种行动中的一个. 在实际棋局中, 需要传递一个Point对象指定落子的位置.
     在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
     """
-    def __init__(self, point, is_pass=False, is_resign=False):
+    def __init__(self, point=None, is_pass=False, is_resign=False):
         assert (point is not None) ^ is_pass ^ is_resign
         self.point = point
         self.is_play = (point is not None)
@@ -49,8 +53,8 @@ class GoString:
     """
     def __init__(self, color, stones, liberties):
         self.color = color
-        self.stones = set(stones)
-        self.liberties = set(liberties)
+        self.stones = set(stones)  # 棋子的Point
+        self.liberties = set(liberties)  # 气的Point
 
     def remove_liberty(self, point):
         self.liberties.remove(point)
@@ -61,8 +65,9 @@ class GoString:
     def merge_with(self, go_string):
         assert go_string.color == self.color
         combined_stones = self.stones | go_string.stones
-        return GoString(self.color, combined_stones,
-                        (self.libertie | go_string.libertie - combined_stones))
+        return GoString(
+            self.color, combined_stones,
+            (self.liberties | go_string.liberties - combined_stones))
 
     @property
     def num_liberties(self):
@@ -76,10 +81,15 @@ class GoString:
 
 
 class Board:
+    """
+    棋盘
+
+    最主要的功能是可以`落子`, 落子后自动更新棋盘的状态
+    """
     def __init__(self, num_rows, num_cols):
         self.num_rows = num_rows
         self.num_cols = num_cols
-        self._grid = {}  # 用来跟踪棋牌的状态, 是一个棋链的字典
+        self._grid = {}  # 用来跟踪棋盘的状态, 是一个棋链的字典
 
     def place_stone(self, player, point):
         """
@@ -174,10 +184,13 @@ class Board:
 
 
 class GameState:
+    """
+    游戏状态
+    """
     def __init__(self, board, next_player, previous, move):
         self.board = board
         self.next_player = next_player
-        self.previous_state = previous
+        self.previous_state = previous  # 这样整个游戏状态就构成了一条链
         self.last_move = move
 
     def apply_move(self, move):
@@ -288,3 +301,21 @@ class GameState:
         return (self.board.get(move.point) is None
                 and not self.is_move_self_capture(self.next_player, move)
                 and not self.does_move_violate_ko(self.next_player, move))
+
+    def legal_moves(self):
+        """
+        返回当前合法的moves
+        """
+        moves = []
+        for row in range(1, self.board.num_rows + 1):
+            for col in range(1, self.board.num_cols + 1):
+                move = Move.play(Point(row=row, col=col))
+                if self.is_valid_move(move):
+                    moves.append(move)
+        moves.append(Move.pass_turn())
+        moves.append(Move.resign())
+        return moves
+
+    def winner(self):
+        # TODO
+        return None

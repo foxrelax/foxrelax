@@ -26,6 +26,6 @@ class Point(namedtuple('Point', 'row col')):
 
     def __deepcopy__(self, memodict={}):
         """
-        Point一旦创建, 是不可变的
+        Point一旦创建, 是不可变的, 直接返回自己
         """
         return self
