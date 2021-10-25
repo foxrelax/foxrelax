@@ -40,6 +40,28 @@ def print_board(board):
     print('    ' + '  '.join(COLS[:board.num_cols]))
 
 
+def point_from_coords(coords):
+    """
+    coords转换成point
+
+    例如:
+    C3, E11 -> point
+    """
+    col = COLS.index(coords[0]) + 1
+    row = int(coords[1:])
+    return Point(row=row, col=col)
+
+
+def coords_from_point(point):
+    """
+    point转换成coords
+
+    例如:
+    point -> C3, E11
+    """
+    return f'{COLS[point.row-1]}{point.row}'
+
+
 def clear_screen():
     # see https://stackoverflow.com/a/23075152/323316
     if platform.system() == 'Windows':
