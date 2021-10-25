@@ -13,8 +13,10 @@ sys.path.insert(
 from foxrelax.go.agent.naive import RandomBot
 from foxrelax.go import goboard_slow
 from foxrelax.go import goboard
+from foxrelax.go import goboard_fast
 from foxrelax.go.gotypes import Player
-from foxrelax.go.utils import (print_board, print_move, clear_screen)
+from foxrelax.go.utils import (print_board, print_move, clear_screen,
+                               point_from_coords)
 
 
 @click.group()
@@ -28,7 +30,25 @@ def cli():
               type=click.Choice(['slow', 'normal', 'fast']),
               help='board模式')
 def run(board):
-    pass
+    board_size = 9
+    if board == 'slow':
+        game = goboard_slow.GameState.new_game(board_size)
+    elif board == 'normal':
+        game = goboard.GameState.new_game(board_size)
+    elif board == 'fast':
+        game = goboard_fast.GameState.new_game(board_size)
+    bot = RandomBot()
+    while not game.is_over():
+        clear_screen()
+        print_board(game.board)
+        if game.next_player == Player.BLACK:
+            human_move = input('--')
+            point = point_from_coords(human_move)
+            move = goboard.Move.play(point)
+        else:
+            move = bot.select_move(game)
+        print_move(game.next_player, move)
+        game = game.apply_move(move)
 
 
 if __name__ == "__main__":

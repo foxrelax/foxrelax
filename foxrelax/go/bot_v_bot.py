@@ -13,6 +13,7 @@ sys.path.insert(
 from foxrelax.go.agent.naive import RandomBot
 from foxrelax.go import goboard_slow
 from foxrelax.go import goboard
+from foxrelax.go import goboard_fast
 from foxrelax.go.gotypes import Player
 from foxrelax.go.utils import (print_board, print_move, clear_screen)
 
@@ -34,7 +35,7 @@ def run(board):
     elif board == 'normal':
         game = goboard.GameState.new_game(board_size)
     elif board == 'fast':
-        pass
+        game = goboard_fast.GameState.new_game(board_size)
     bots = {Player.BLACK: RandomBot(), Player.WHITE: RandomBot()}
     while not game.is_over():
         time.sleep(0.3)

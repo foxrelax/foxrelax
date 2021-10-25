@@ -1,58 +1,52 @@
 # -*- coding:utf-8 -*-
 import copy
 from foxrelax.go.gotypes import (Player, Point)
+from foxrelax.go.utils import MoveAge
 from foxrelax.go import zobrist
 
 __all__ = ['Board', 'GameState', 'Move']
 
+neighbor_tables = {}
+corner_tables = {}
+
+
+def init_neighbor_table(dim):
+    rows, cols = dim
+    new_table = {}
+    for r in range(1, rows + 1):
+        for c in range(1, cols + 1):
+            p = Point(row=r, col=c)
+            full_neighbors = p.neighbors()
+            true_neighbors = [
+                n for n in full_neighbors
+                if 1 <= n.row <= rows and 1 <= n.col <= cols
+            ]
+            new_table[p] = true_neighbors
+    neighbor_tables[dim] = new_table
+
+
+def init_corner_table(dim):
+    rows, cols = dim
+    new_table = {}
+    for r in range(1, rows + 1):
+        for c in range(1, cols + 1):
+            p = Point(row=r, col=c)
+            full_neighbors = [
+                Point(row=p.row - 1, col=p.col - 1),
+                Point(row=p.row - 1, col=p.col + 1),
+                Point(row=p.row + 1, col=p.col - 1),
+                Point(row=p.row + 1, col=p.col + 1)
+            ]
+            true_neighbors = [
+                n for n in full_neighbors
+                if 1 <= n.row <= rows and 1 <= n.col <= cols
+            ]
+            new_table[p] = true_neighbors
+    corner_tables[dim] = new_table
+
 
 class IllegalMoveError(Exception):
     pass
-
-
-class Move:
-    """
-    表示一个回合中可能采取的动作. 有三种动作:
-    1. 在棋盘上落下一颗棋子(play)
-    2. 跳过回合(pass)
-    3. 直接认输(resign)
-
-    遵循美国围棋协会(AGA)的惯例, 我们使用术语动作(move)来表示这三种行动中的一个. 在实际棋局中, 需要传递一个Point对象指定落子的位置.
-    在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
-    """
-    def __init__(self, point=None, is_pass=False, is_resign=False):
-        assert (point is not None) ^ is_pass ^ is_resign
-        self.point = point
-        self.is_play = (point is not None)
-        self.is_pass = is_pass
-        self.is_resign = is_resign
-
-    @classmethod
-    def play(cls, point):
-        return Move(point)
-
-    @classmethod
-    def pass_turn(cls):
-        return Move(is_pass=True)
-
-    @classmethod
-    def resign(cls):
-        return Move(is_resign=True)
-
-    def __str__(self):
-        if self.is_pass:
-            return 'pass'
-        if self.is_resign:
-            return 'resign'
-        return f'(r {self.point.row}, c {self.point.col})'
-
-    def __hash__(self):
-        return hash((self.is_play, self.is_pass, self.is_resign, self.point))
-
-    def __eq__(self, other):
-        return (self.is_play, self.is_pass, self.is_resign,
-                self.point) == (other.is_play, other.is_pass, other.is_resign,
-                                other.point)
 
 
 class GoString:
@@ -110,6 +104,22 @@ class Board:
         self._grid = {}  # 用来跟踪棋盘的状态, 是一个棋链的字典
         self._hash = zobrist.EMPTY_BOARD  # 使用zobrist哈希来跟踪棋盘状态
 
+        global neighbor_tables, corner_tables
+        dim = (num_rows, num_cols)
+        if dim not in neighbor_tables:
+            init_neighbor_table(dim)
+        if dim not in corner_tables:
+            init_corner_table(dim)
+        self.neighbor_table = neighbor_tables[dim]
+        self.corner_table = corner_tables[dim]
+        self.move_ages = MoveAge(self)
+
+    def neighbors(self, point):
+        return self.neighbor_table[point]
+
+    def corners(self, point):
+        return self.corner_table[point]
+
     def place_stone(self, player, point):
         """
         落子
@@ -127,9 +137,9 @@ class Board:
         adjacent_same_color = []  # point周围同色棋链
         adjacent_opposite_color = []  # point周围对方的棋链
         liberties = []  # point周围的气
-        for neighbor in point.neighbors():
-            if not self.is_on_grid(neighbor):
-                continue
+        self.move_ages.increment_all()
+        self.move_ages.add(point)
+        for neighbor in self.neighbor_table[point]:
             neighbor_string = self._grid.get(neighbor)
             if neighbor_string is None:
                 liberties.append(neighbor)
@@ -159,6 +169,70 @@ class Board:
                 # 如果对方某条棋链没有气了, 要提走它
                 self._remove_string(other_color_string)
 
+    def _replace_string(self, new_string):
+        """
+        更新围棋棋盘网格
+        """
+        for point in new_string.stones:
+            self._grid[point] = new_string
+
+    def _remove_string(self, string):
+        """
+        提走一条棋链的所有棋子
+
+        在提走一条棋链的时候, 其它棋链会增加气数
+        """
+        for point in string.stones:
+            self.move_ages.reset_age(point)
+            for neighbor in self.neighbor_table[point]:
+                neighbor_string = self._grid.get(neighbor)
+                if neighbor_string is None:
+                    continue
+                if neighbor_string is not string:
+                    self._replace_string(neighbor_string.with_liberty(point))
+            self._grid[point] = None
+
+            # 在zobrist哈希中, 需要通过逆应用这步动作的哈希值来实现提子
+            self._hash ^= zobrist.HASH_CODE[point, string.color]
+            self._hash ^= zobrist.HASH_CODE[point, None]
+
+    def is_self_capture(self, player, point):
+        """
+        判断是否是`自吃`
+        """
+        friendly_strings = []
+        for neighbor in self.neighbor_table[point]:
+            neighbor_string = self._grid.get(neighbor)
+            if neighbor_string is None:
+                # point是有气的, 不是`自吃`
+                return False
+            elif neighbor_string.color == player:
+                friendly_strings.append(neighbor_string)
+            else:
+                if neighbor_string.num_liberties == 1:
+                    # 这是吃对方的子, 并不是`自吃`
+                    return False
+
+        if all(neighbor.num_liberties == 1 for neighbor in friendly_strings):
+            return True
+        return False
+
+    def is_capture(self, player, point):
+        """
+        判断是否能吃掉对方的子
+        """
+        for neighbor in self.neighbor_table[point]:
+            neighbor_string = self._grid.get(neighbor)
+            if neighbor_string is None:
+                continue
+            elif neighbor_string.color == player:
+                continue
+            else:
+                if neighbor_string.num_liberties == 1:
+                    # 对方的棋链只有一口气, 可以吃掉对方
+                    return True
+        return False
+
     def is_on_grid(self, point):
         """
         检查point是否在棋盘内
@@ -184,31 +258,6 @@ class Board:
             return None
         return string
 
-    def _replace_string(self, new_string):
-        """
-        更新围棋棋盘网格
-        """
-        for point in new_string.stones:
-            self._grid[point] = new_string
-
-    def _remove_string(self, string):
-        """
-        提走一条棋链的所有棋子
-
-        在提走一条棋链的时候, 其它棋链会增加气数
-        """
-        for point in string.stones:
-            for neighbor in point.neighbors():
-                neighbor_string = self._grid.get(neighbor)
-                if neighbor_string is None:
-                    continue
-                if neighbor_string is not string:
-                    self._replace_string(neighbor_string.with_liberty(point))
-            self._grid[point] = None
-
-            # 在zobrist哈希中, 需要通过逆应用这步动作的哈希值来实现提子
-            self._hash ^= zobrist.HASH_CODE[point, string.color]
-
     def __eq__(self, other):
         return isinstance(other, Board) and \
             self.num_rows == other.num_rows and \
@@ -223,6 +272,51 @@ class Board:
 
     def zobrist_hash(self):
         return self._hash
+
+
+class Move:
+    """
+    表示一个回合中可能采取的动作. 有三种动作:
+    1. 在棋盘上落下一颗棋子(play)
+    2. 跳过回合(pass)
+    3. 直接认输(resign)
+
+    遵循美国围棋协会(AGA)的惯例, 我们使用术语动作(move)来表示这三种行动中的一个. 在实际棋局中, 需要传递一个Point对象指定落子的位置.
+    在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
+    """
+    def __init__(self, point=None, is_pass=False, is_resign=False):
+        assert (point is not None) ^ is_pass ^ is_resign
+        self.point = point
+        self.is_play = (point is not None)
+        self.is_pass = is_pass
+        self.is_resign = is_resign
+
+    @classmethod
+    def play(cls, point):
+        return Move(point)
+
+    @classmethod
+    def pass_turn(cls):
+        return Move(is_pass=True)
+
+    @classmethod
+    def resign(cls):
+        return Move(is_resign=True)
+
+    def __str__(self):
+        if self.is_pass:
+            return 'pass'
+        if self.is_resign:
+            return 'resign'
+        return f'(r {self.point.row}, c {self.point.col})'
+
+    def __hash__(self):
+        return hash((self.is_play, self.is_pass, self.is_resign, self.point))
+
+    def __eq__(self, other):
+        return (self.is_play, self.is_pass, self.is_resign,
+                self.point) == (other.is_play, other.is_pass, other.is_resign,
+                                other.point)
 
 
 class GameState:
@@ -260,26 +354,6 @@ class GameState:
         board = Board(*board_size)
         return GameState(board, Player.BLACK, None, None)
 
-    def is_over(self):
-        """
-        判断棋局是否结束
-
-        1. 如果一方直接认输(resign)则棋局结束
-        2. 如果双方接连跳过回合(pass)则棋局结束
-        """
-        if self.last_move is None:
-            return False
-
-        # 如果一方直接认输(resign)则棋局结束
-        if self.last_move.is_resign:
-            return True
-
-        # 如果双方接连跳过回合(pass)则棋局结束
-        second_last_move = self.previous_state.last_move
-        if second_last_move is None:
-            return False
-        return self.last_move.is_pass and second_last_move.is_pass
-
     def is_move_self_capture(self, player, move):
         """
         判断是否是`自吃(self capture)`
@@ -290,16 +364,11 @@ class GameState:
         的场景也不是不可能, 但在正式比赛中这种情况基本上闻所未闻
 
         在检查新落棋子是否气尽之前, 一般应当先判断是否能吃掉对方的棋子, 在所有规则中, 这一步动作都是有效的吃子而不是自吃
-
-        Board类实际上是允许自吃动作的, 但是在GameState类中, 我们可以在Board的一个副本上执行落子动作, 然后检查副本上的气数并检查这个规则 
         """
         if not move.is_play:
             return False
 
-        next_board = copy.deepcopy(self.board)
-        next_board.place_stone(player, move.point)
-        new_string = next_board.get_go_string(move.point)
-        return new_string.num_liberties == 0
+        return self.board.is_self_capture(player, move.point)
 
     @property
     def situation(self):
@@ -337,6 +406,26 @@ class GameState:
         return (self.board.get(move.point) is None
                 and not self.is_move_self_capture(self.next_player, move)
                 and not self.does_move_violate_ko(self.next_player, move))
+
+    def is_over(self):
+        """
+        判断棋局是否结束
+
+        1. 如果一方直接认输(resign)则棋局结束
+        2. 如果双方接连跳过回合(pass)则棋局结束
+        """
+        if self.last_move is None:
+            return False
+
+        # 如果一方直接认输(resign)则棋局结束
+        if self.last_move.is_resign:
+            return True
+
+        # 如果双方接连跳过回合(pass)则棋局结束
+        second_last_move = self.previous_state.last_move
+        if second_last_move is None:
+            return False
+        return self.last_move.is_pass and second_last_move.is_pass
 
     def legal_moves(self):
         """
