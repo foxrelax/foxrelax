@@ -2,6 +2,7 @@
 
 import copy
 from foxrelax.go.gotypes import (Point, Player)
+from foxrelax.go.scoring import compute_game_result
 
 __all__ = ['Board', 'GameState', 'Move']
 
@@ -317,5 +318,9 @@ class GameState:
         return moves
 
     def winner(self):
-        # TODO
-        return None
+        if not self.is_over():
+            return None
+        if self.last_move.is_resign:
+            return self.next_player
+        game_result = compute_game_result(self)
+        return game_result.winner
