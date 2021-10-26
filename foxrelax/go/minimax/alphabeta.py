@@ -87,7 +87,6 @@ class AlphaBetaAgent(Agent):
         self.max_depth = max_depth
         self.eval_fn = eval_fn
 
-    # TODO
     def select_move(self, game_state):
         best_moves = []
         best_score = None
