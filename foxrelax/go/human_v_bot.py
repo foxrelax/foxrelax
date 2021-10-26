@@ -17,6 +17,9 @@ from foxrelax.go import goboard_fast
 from foxrelax.go.gotypes import Player
 from foxrelax.go.utils import (print_board, print_move, clear_screen,
                                point_from_coords)
+"""
+人机对战(机器人是随机机器人)
+"""
 
 
 @click.group()
@@ -37,6 +40,7 @@ def run(board):
         game = goboard.GameState.new_game(board_size)
     elif board == 'fast':
         game = goboard_fast.GameState.new_game(board_size)
+    # 构造一个随机机器人
     bot = RandomBot()
     while not game.is_over():
         clear_screen()

@@ -11,11 +11,15 @@ sys.path.insert(
         os.path.abspath(__file__)))))
 
 from foxrelax.go.agent.naive import RandomBot
+from foxrelax.go.agent.naive_fast import FastRandomBot
 from foxrelax.go import goboard_slow
 from foxrelax.go import goboard
 from foxrelax.go import goboard_fast
 from foxrelax.go.gotypes import Player
 from foxrelax.go.utils import (print_board, print_move, clear_screen)
+"""
+`随机机器人 VS 随机机器人`, 目的只是为了测试游戏流程
+"""
 
 
 @click.group()
@@ -36,7 +40,12 @@ def run(board):
         game = goboard.GameState.new_game(board_size)
     elif board == 'fast':
         game = goboard_fast.GameState.new_game(board_size)
-    bots = {Player.BLACK: RandomBot(), Player.WHITE: RandomBot()}
+
+    # 构造两个随机机器人
+    if board == 'slow' or board == 'normal':
+        bots = {Player.BLACK: RandomBot(), Player.WHITE: RandomBot()}
+    else:
+        bots = {Player.BLACK: FastRandomBot(), Player.WHITE: FastRandomBot()}
     while not game.is_over():
         time.sleep(0.3)
         clear_screen()

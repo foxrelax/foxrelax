@@ -12,6 +12,9 @@ sys.path.insert(
 from foxrelax.go.ttt.ttttype import (Player, Point)
 from foxrelax.go.ttt.tttboard import (GameState, Move)
 from foxrelax.go.minimax.minimax import MiniMaxAgent
+"""
+井字棋人机对战
+"""
 
 COL_NAMES = 'ABC'
 
