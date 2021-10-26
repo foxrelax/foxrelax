@@ -26,7 +26,6 @@ def reverse_game_result(game_result):
 def best_result(game_state):
     """
     对于game_state.next_player来说最好的结果
-
     """
     if game_state.is_over():
         # 游戏结束
