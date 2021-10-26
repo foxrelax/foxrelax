@@ -2,17 +2,18 @@
 # -*- coding:utf-8 -*-
 import sys
 import os
-import time
 import click
-
-from foxrelax.go.ttt.ttttype import (Player, Point)
-
-COL_NAMES = 'ABC'
 
 sys.path.insert(
     0,
     os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__)))))
+
+from foxrelax.go.ttt.ttttype import (Player, Point)
+from foxrelax.go.ttt.tttboard import (GameState, Move)
+from foxrelax.go.minimax.minimax import MiniMaxAgent
+
+COL_NAMES = 'ABC'
 
 
 def print_board(board):
@@ -43,7 +44,24 @@ def cli():
 
 @cli.command()
 def run():
-    pass
+    game = GameState.new_game()
+    human_player = Player.X
+    bot = MiniMaxAgent()
+    while not game.is_over():
+        print_board(game.board)
+        if game.next_player == human_player:
+            human_move = input('--')
+            point = point_from_coords(human_move.strip())
+            move = Move(point)
+        else:
+            move = bot.select_move(game)
+        game = game.apply_move(move)
+    print_board(game.board)
+    winner = game.winner()
+    if winner is None:
+        print('It is a draw.')
+    else:
+        print(f'Winner: {winner}')
 
 
 if __name__ == "__main__":
