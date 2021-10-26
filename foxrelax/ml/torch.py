@@ -28,6 +28,8 @@ DATA_HUB['logistic_regression_unseparable'] = (
 DATA_HUB['logistic_regression_separable'] = (
     'csv', '/ml/logistic_regression_separable.csv',
     '97ff298c6aed70329f6f28757de04759f5600956')
+DATA_HUB['mnist'] = ('npz', '/ml/mnist.npz',
+                     'e7727b719822ece6d78ca83af078bcd85ae81b0d')
 DATA_HUB['kaggle_house_train'] = ('csv', '/ml/kaggle_house_pred_train.csv',
                                   '585e9cc93e70b39160e7921475f9bcd7d31219ce')
 DATA_HUB['kaggle_house_test'] = ('csv', '/ml/kaggle_house_pred_test.csv',
@@ -1575,6 +1577,7 @@ def multibox_target(anchors, labels):
     class_labels = torch.stack(batch_class_labels)  # (batch_size, num_enchors)
     return (bbox_offset, bbox_mask, class_labels)
 
+
 def offset_inverse(anchors, offset_preds):
     """根据带有预测偏移量的锚框来预测边界框"""
     # anc.shape - (num_anchors, 4)
@@ -1590,6 +1593,7 @@ def offset_inverse(anchors, offset_preds):
     pred_bbox = torch.cat((pred_bbox_xy, pred_bbox_wh), axis=1)
     predicted_bbox = box_center_to_corner(pred_bbox)
     return predicted_bbox
+
 
 # 目录结构(图片的尺寸都是256x256):
 # banana_detection/
