@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import enum
 import random
-from foxrelax.foxrelax.go.gotypes import (Player, Point)
+from foxrelax.go.gotypes import (Player, Point)
 from foxrelax.go.agent.base import Agent
 
 __all__ = [
@@ -126,7 +126,6 @@ class DepthPrunedAgent(Agent):
     def select_move(self, game_state):
         best_moves = []
         best_score = None
-        # Loop over all legal moves.
         for possible_move in game_state.legal_moves():
             next_state = game_state.apply_move(possible_move)
             opponent_best_outcome = best_result(next_state, self.max_depth,
