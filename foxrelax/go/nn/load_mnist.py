@@ -16,7 +16,7 @@ def encode_label(j):
 
 def shape_data(data):
     # 将输入的28x28的图像拉伸成784的特征向量
-    features = [np.reshape(x, (784, 1)) for x in data[0]]
+    features = [np.reshape(x, (784, 1)) / 256 for x in data[0]]
     # 所有的标签使用one-hot encoding
     labels = [encode_label(y) for y in data[1]]
     return list(zip(features, labels))
