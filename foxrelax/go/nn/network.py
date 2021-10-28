@@ -50,6 +50,10 @@ class SequentialNetwork:
               mini_batch_size,
               learning_rate,
               test_data=None):
+        """
+        当前这个版本训练起来是非常慢的, 没有用到任何GPU硬件加速的特性, 针对小批量的训练的时候,
+        也是迭代小批量中每个样本单独计算, 效率很低
+        """
         n = len(training_data)
         for epoch in range(epochs):
             random.shuffle(training_data)
