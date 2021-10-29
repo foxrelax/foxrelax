@@ -31,3 +31,28 @@ if __name__ == '__main__':
               mini_batch_size=10,
               learning_rate=3.0,
               test_data=test_data)
+
+    # 输出:
+    # Initialize Network...
+    # |--- DenseLayer
+    #   |-- dimensions: (784,392)
+    # |-- ActivationLayer
+    #   |-- dimensions: (392,392)
+    # |--- DenseLayer
+    #   |-- dimensions: (392,196)
+    # |-- ActivationLayer
+    #   |-- dimensions: (196,196)
+    # |--- DenseLayer
+    #   |-- dimensions: (196,10)
+    # |-- ActivationLayer
+    #   |-- dimensions: (10,10)
+    # Epoch 0: 3618 / 10000
+    # Epoch 1: 5496 / 10000
+    # Epoch 2: 5239 / 10000
+    # Epoch 3: 6315 / 10000
+    # Epoch 4: 6304 / 10000
+    # Epoch 5: 6896 / 10000
+    # Epoch 6: 7112 / 10000
+    # Epoch 7: 7238 / 10000
+    # Epoch 8: 7144 / 10000
+    # Epoch 9: 7460 / 10000

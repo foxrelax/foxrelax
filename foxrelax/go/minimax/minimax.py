@@ -7,6 +7,12 @@ from foxrelax.go.agent.base import Agent
 __all__ = [
     'MinimaxAgent',
 ]
+"""
+游戏树: 一个棋局指向多个可能的后续棋局, 这种结构称为游戏树
+
+极大极小搜索算法
+每一回合, `它会在双方间切换视角`, 我们期望自己的得分最大化, 对手则希望我们的得分最小化(假设对手和你一样聪明)
+"""
 
 
 class GameResult(enum.Enum):
@@ -25,10 +31,12 @@ def reverse_game_result(game_result):
 
 def best_result(game_state):
     """
-    对于game_state.next_player来说最好的结果
+    评估当前的game_state, 计算出对于game_state.next_player来说最好的结果
+
+    递归调用就是`绘制游戏树`的过程
     """
     if game_state.is_over():
-        # 游戏结束
+        # 游戏结束(游戏树的叶子节点)
         if game_state.winner() == game_state.next_player:
             return GameResult.WIN
         elif game_state.winner() is None:
