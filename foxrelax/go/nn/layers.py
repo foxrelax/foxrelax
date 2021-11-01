@@ -52,7 +52,7 @@ class Layer:
         """
         前向传播
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def get_forward_input(self):
         """
@@ -68,7 +68,7 @@ class Layer:
         """
         后向传播
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def get_backward_input(self):
         """
@@ -96,7 +96,7 @@ class Layer:
         """
         描述自身的方法
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class ActivationLayer(Layer):

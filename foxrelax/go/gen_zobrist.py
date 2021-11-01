@@ -72,7 +72,7 @@ def run():
 
 
 """
-执行: ./zobrist_gen.py run
+执行: ./gen_zobrist.py run
 用来生成zobrist.py, 将输出的内容copy到zobrist.py中
 """
 if __name__ == "__main__":
