@@ -50,6 +50,18 @@ DATA_HUB['img/cat3'] = ('jpg', '/ml/img/cat3.jpg',
                         '80249a6aa841706d861f3f7efad582f6828ca3d0')
 DATA_HUB['img/catdog'] = ('jpg', '/ml/img/catdog.jpg',
                           '60b7d540db03eef6b9834329bccc4417ef349bf6')
+DATA_HUB['go/features-20'] = ('npy', '/ml/go/features-20.npy',
+                              '3f84459adb1d5dd66a6395dfbc513b99349fd8f0')
+DATA_HUB['go/features-200'] = ('npy', '/ml/go/features-200.npy',
+                               'cb8628ffc84c9b6ecb1bd0991255b7bb3d85b0d7')
+DATA_HUB['go/features-40k'] = ('npy', '/ml/go/features-40k.npy',
+                               'f3f0bdb3dd8a5cc663ef56ca4c8e06032034531d')
+DATA_HUB['go/labels-20'] = ('npy', '/ml/go/labels-20.npy',
+                            'c6f03c99916218175e185601530fc6a32d26c114')
+DATA_HUB['go/labels-200'] = ('npy', '/ml/go/labels-200.npy',
+                             'ef7789e4b68555c903bc66ec56ecbf7af956d081')
+DATA_HUB['go/labels-40k'] = ('npy', '/ml/go/labels-40k.npy',
+                             'd959a562ef5189413a0d1b3525972e9c9dd2b598')
 
 
 def download(name, cache_dir=os.path.join('..', 'data')):
@@ -67,6 +79,7 @@ def download(name, cache_dir=os.path.join('..', 'data')):
                 if not data:
                     break
                 sha1.update(data)
+        print(sha1.hexdigest())
         if sha1.hexdigest() == sha1_hash:
             return fname
     print(f'正在从{url}下载{fname}...')
