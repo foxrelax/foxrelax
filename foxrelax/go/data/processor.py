@@ -93,7 +93,11 @@ class GoDataProcessor:
         this_tar.close()
         return tar_file
 
-    def process_zip(self, zip_file_name, data_file_name, game_list):
+    def process_zip(self,
+                    zip_file_name,
+                    data_file_name,
+                    game_list,
+                    chunk_size=1024):
         """
         一个*.tar.gz文件中会有多个*.sgf文件, 我们要处理的是game_list中列出来的*.sgf文件
 
@@ -152,6 +156,7 @@ class GoDataProcessor:
         counter = 0
         for index in game_list:
             name = name_list[index + 1]
+            print(name)
             if not name.endswith('.sgf'):
                 raise ValueError(name + ' is not a valid sgf')
             sgf_content = zip_file.extractfile(name).read()
@@ -180,21 +185,27 @@ class GoDataProcessor:
                     game_state = game_state.apply_move(move)
                     first_move_done = True
 
-        # 在本地文件系统分块存储特征和标签, 以1024为一个块
+        # 在本地文件系统分块存储特征和标签
         feature_file_base = self.data_dir + '/' + data_file_name + '_features_%d'
         label_file_base = self.data_dir + '/' + data_file_name + '_labels_%d'
 
         chunk = 0
-        chunksize = 1024
-        while features.shape[0] >= chunksize:
+        if chunk_size is None:
             feature_file = feature_file_base % chunk
             label_file = label_file_base % chunk
-            chunk += 1
-            current_features, features = features[:chunksize], features[
-                chunksize:]
-            current_labels, labels = labels[:chunksize], labels[chunksize:]
-            np.save(feature_file, current_features)
-            np.save(label_file, current_labels)
+            np.save(feature_file, features)
+            np.save(label_file, labels)
+        else:
+            while features.shape[0] >= chunk_size:
+                feature_file = feature_file_base % chunk
+                label_file = label_file_base % chunk
+                chunk += 1
+                current_features, features = features[:chunk_size], features[
+                    chunk_size:]
+                current_labels, labels = labels[:chunk_size], labels[
+                    chunk_size:]
+                np.save(feature_file, current_features)
+                np.save(label_file, current_labels)
 
     def consolidate_games(self, data_type, samples):
         """
@@ -322,6 +333,20 @@ class GoDataProcessor:
         return total_examples
 
 
-if __name__ == '__main__':
+def test():
+    # 2018-06-02-20.sgf - 0
+    # 2018-06-12-31.sgf - 1
+    zip_file_name = 'KGS-2018_06-19-1002-.tar.gz'
+    zip_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 zip_file_name)
+    base_name = zip_file_name.replace('.tar.gz', '')
+    data_file_name = base_name + 'train'
     process = GoDataProcessor()
-    process.load_go_data()
+    shutil.copy(zip_file_path, os.path.join(process.data_dir, zip_file_name))
+    process.process_zip(zip_file_name, data_file_name, [0, 1], chunk_size=None)
+
+
+if __name__ == '__main__':
+    # process = GoDataProcessor()
+    # process.load_go_data()
+    test()

@@ -129,7 +129,11 @@ class GoDataProcessor:
             pool.join()
             sys.exit(-1)
 
-    def process_zip(self, zip_file_name, data_file_name, game_list):
+    def process_zip(self,
+                    zip_file_name,
+                    data_file_name,
+                    game_list,
+                    chunk_size=1024):
         """
         一个*.tar.gz文件中会有多个*.sgf文件, 我们要处理的是game_list中列出来的*.sgf文件
 
@@ -216,21 +220,27 @@ class GoDataProcessor:
                     game_state = game_state.apply_move(move)
                     first_move_done = True
 
-        # 在本地文件系统分块存储特征和标签, 以1024为一个块
+        # 在本地文件系统分块存储特征和标签
         feature_file_base = self.data_dir + '/' + data_file_name + '_features_%d'
         label_file_base = self.data_dir + '/' + data_file_name + '_labels_%d'
 
         chunk = 0
-        chunksize = 1024
-        while features.shape[0] >= chunksize:
+        if chunk_size is None:
             feature_file = feature_file_base % chunk
             label_file = label_file_base % chunk
-            chunk += 1
-            current_features, features = features[:chunksize], features[
-                chunksize:]
-            current_labels, labels = labels[:chunksize], labels[chunksize:]
-            np.save(feature_file, current_features)
-            np.save(label_file, current_labels)
+            np.save(feature_file, features)
+            np.save(label_file, labels)
+        else:
+            while features.shape[0] >= chunk_size:
+                feature_file = feature_file_base % chunk
+                label_file = label_file_base % chunk
+                chunk += 1
+                current_features, features = features[:chunk_size], features[
+                    chunk_size:]
+                current_labels, labels = labels[:chunk_size], labels[
+                    chunk_size:]
+                np.save(feature_file, current_features)
+                np.save(label_file, current_labels)
 
     def unzip_data(self, zip_file_name):
         """
