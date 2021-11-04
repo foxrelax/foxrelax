@@ -101,3 +101,8 @@ class KGSIndex:
         else:
             for url_and_target in urls_to_download:
                 _worker(url_and_target)
+
+
+if __name__ == '__main__':
+    index = KGSIndex()
+    index.download_files()

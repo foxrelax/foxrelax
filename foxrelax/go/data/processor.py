@@ -28,7 +28,7 @@ class GoDataProcessor:
 
     def load_go_data(self, data_type='train', num_samples=1000):
         """
-        加载, 处理, 存储数据
+        从KGS下载在线围棋棋谱, 加载, 处理, 存储数据
     
         data_type: train | test
         num_samples: 棋局的数量
@@ -52,7 +52,7 @@ class GoDataProcessor:
         #  ('KGS-2005-19-13941-.tar.gz', 13444)]
         data = sampler.draw_data(data_type, num_samples)
 
-        zip_names = set()
+        zip_names = set()  # 保存data中所有的文件名*.tar.gz
         # indices_by_zip_name:
         # {
         #   'KGS-2013-19-13783-.tar.gz': [5696, 3746, 8279, ... ],
@@ -95,10 +95,14 @@ class GoDataProcessor:
 
     def process_zip(self, zip_file_name, data_file_name, game_list):
         """
+        一个*.tar.gz文件中会有多个*.sgf文件, 我们要处理的是game_list中列出来的*.sgf文件
+
+        参数格式:
         zip_file_name: KGS-2013-19-13783-.tar.gz, 包含多个*.sgf的压缩文件
-        data_file_name: KGS-2013-19-13783-train
+        data_file_name: KGS-2013-19-13783-train, 是生成的目标文件的前缀
         game_list: [5696, 3746, 8279, ... ], 需要处理的*.sgf索引列表
 
+        内部实现逻辑:
         1. 调用unzip_data解压当前文件
         2. 初始化一个Encoder实例来编码SGF棋谱(直接使用self.encoder)
         3. 初始化合理形状的特征和标签NumPy数组
@@ -109,7 +113,7 @@ class GoDataProcessor:
            d. 把下一步动作执行到棋盘上并继续
         5. 在本地文件系统分块存储特征和标签
 
-        只所以要分块存储, 因为NumPy数组会迅速增大, 而数据存储在较小文件中可以保留更多灵活性, 
+        之所以要分块存储, 因为NumPy数组会迅速增大, 而数据存储在较小文件中可以保留更多灵活性, 
         例如: 我们可以把分块文件合并起来, 也可以根据需要将每个文件单独加载到内存. 我们在实现
         while循环中分块的最后一部分数据可能会丢掉, 但是影响不大
 
@@ -144,7 +148,7 @@ class GoDataProcessor:
         features = np.zeros(feature_shape)
         labels = np.zeros((total_examples, ))
 
-        # 迭代遍历棋局列表, 并逐个处理棋局数据
+        # 迭代遍历棋局(*.sgf)列表, 并逐个处理棋局数据
         counter = 0
         for index in game_list:
             name = name_list[index + 1]
@@ -176,7 +180,7 @@ class GoDataProcessor:
                     game_state = game_state.apply_move(move)
                     first_move_done = True
 
-        # 在本地文件系统分块存储特征和标签
+        # 在本地文件系统分块存储特征和标签, 以1024为一个块
         feature_file_base = self.data_dir + '/' + data_file_name + '_features_%d'
         label_file_base = self.data_dir + '/' + data_file_name + '_labels_%d'
 
@@ -194,6 +198,17 @@ class GoDataProcessor:
 
     def consolidate_games(self, data_type, samples):
         """
+        将分块的数据合并成一个目标文件:
+        features_train.npy
+        labels_train.npy
+        或者:
+        features_test.npy
+        labels_test.npy
+
+        使用oneplane encoder, 当num_samples=1000的情况下(有1000个sgf文件), 样本大约是233M, 标签大约是1.3M. 
+        这样推算如果有10000个*.sgf文件, 样本大约是2GB, 标签大约是13M
+
+        参数说明:
         data_type: train | test
         samples: [('KGS-2004-19-12106-.tar.gz', 7883),
                   ('KGS-2006-19-10388-.tar.gz', 10064),
@@ -206,6 +221,11 @@ class GoDataProcessor:
                   ('KGS-2005-19-13941-.tar.gz', 13444)]
         """
         files_needed = set(file_name for file_name, index in samples)
+        # file_names:
+        # ['KGS-2004-19-12106-',
+        #  'KGS-2006-19-10388-',
+        #  'KGS-2012-19-13665-',
+        #  ...]
         file_names = []
         for zip_file_name in files_needed:
             file_name = zip_file_name.replace('.tar.gz', '') + data_type
@@ -222,15 +242,15 @@ class GoDataProcessor:
                 x = np.load(feature_file)
                 y = np.load(label_file)
                 x = x.astype('float32')
-                # y = to_categorical(y.astype(int), 19 * 19) # TODO
                 feature_list.append(x)
                 label_list.append(y)
         features = np.concatenate(feature_list, axis=0)
         labels = np.concatenate(label_list, axis=0)
+        # 保存为文件
         np.save('{}/features_{}.npy'.format(self.data_dir, data_type),
                 features)
         np.save('{}/labels_{}.npy'.format(self.data_dir, data_type), labels)
-
+        # 返回
         return features, labels
 
     @staticmethod
@@ -279,14 +299,16 @@ class GoDataProcessor:
         218
         """
         total_examples = 0
+        # 遍历所有的棋局*.sgf
         for index in game_list:
             name = name_list[index + 1]  #跳过第一个, 这个文件不是*.sgf
             if name.endswith('.sgf'):
                 sgf_content = zip_file.extractfile(name).read()
                 sgf = Sgf_game.from_string(sgf_content)
-                game_state, first_move_done = self.get_handicap(sgf)
+                _, first_move_done = self.get_handicap(sgf)
 
                 num_moves = 0  # 一个*.sgf中一共有多少move
+                # 遍历一局
                 for item in sgf.main_sequence_iter():
                     color, move = item.get_move()
                     if color is not None:

@@ -20,7 +20,7 @@ class DataGenerator:
         """
         self.data_directory = data_directory
         self.samples = samples
-        self.files = set(file_name for file_name, index in samples)
+        self.files = set(file_name for file_name, _ in samples)
         self.num_samples = None
 
     def get_num_samples(self, batch_size=128):
@@ -33,9 +33,17 @@ class DataGenerator:
             return self.num_samples
 
     def _generate(self, batch_size):
+        """
+        创建并返回批量数据
+
+        功能和GoDataProcessor.consolidate_games()类似. 不同的是前者会把数据加载到内存
+        一次性返回(需要一个巨大的NumPy数组); 而_generate只需要yield一个小批量数据即可
+        """
+        # 遍历所有的棋局*.sgf
         for zip_file_name in self.files:
             file_name = zip_file_name.replace('.tar.gz', '') + 'train'
             base = self.data_directory + '/' + file_name + '_features_*.npy'
+            # 遍历一个棋局内所有的训练样本
             for feature_file in glob.glob(base):
                 label_file = feature_file.replace('features', 'labels')
                 x = np.load(feature_file)
@@ -63,6 +71,6 @@ if __name__ == '__main__':
                ('KGS-2005-19-13941-.tar.gz', 13444)]
     generator = DataGenerator(data_directory='../data', samples=samples)
     for X, y in generator.generate():
-        print(X.shape, y.shape)
+        print(X.shape, y.shape)  # (128, 1, 19, 19) (128,)
         break
     print(generator.get_num_samples())
