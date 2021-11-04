@@ -116,6 +116,10 @@ class GoDataProcessor:
                      data_file_name, indices_by_zip_name[zip_name]))
 
         cores = multiprocessing.cpu_count()
+        # Bug Fix:
+        # ValueError: not enough values to unpack
+        if cores > len(zip_names):
+            cores = len(zip_names)
         pool = multiprocessing.Pool(processes=cores)
         p = pool.map_async(_worker, zips_to_process)
         try:
@@ -375,6 +379,6 @@ if __name__ == "__main__":
     process = GoDataProcessor()
     generator = process.load_go_data(use_generator=True)
     print(generator.get_num_samples())  # 168960
-    for X, y in generator.generate():
+    for X, y in generator._generate():
         print(X.shape, y.shape)  # (128, 1, 19, 19) (128,)
         break

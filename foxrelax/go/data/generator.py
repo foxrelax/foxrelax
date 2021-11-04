@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import torch
 import glob
 from typing import Generator
 import numpy as np
@@ -52,10 +53,15 @@ class DataGenerator:
                 while x.shape[0] >= batch_size:
                     x_batch, x = x[:batch_size], x[batch_size:]
                     y_batch, y = y[:batch_size], y[batch_size:]
-                    yield x_batch, y_batch
+                    yield torch.tensor(x_batch), torch.tensor(y_batch).type(
+                        torch.long)
 
     def generate(self, batch_size=128):
+        """
+        这个会无限循环下去
+        """
         while True:
+            print('xxxx')
             for item in self._generate(batch_size):
                 yield item
 
@@ -70,7 +76,8 @@ if __name__ == '__main__':
                ('KGS-2009-19-18837-.tar.gz', 9086),
                ('KGS-2005-19-13941-.tar.gz', 13444)]
     generator = DataGenerator(data_directory='../data', samples=samples)
-    for X, y in generator.generate():
-        print(X.shape, y.shape)  # (128, 1, 19, 19) (128,)
+    for X, y in generator._generate():
+        print(X.shape,
+              y.shape)  # torch.Size([128, 1, 19, 19]) torch.Size([128])
         break
     print(generator.get_num_samples())
