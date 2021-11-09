@@ -28,6 +28,8 @@ DATA_HUB['logistic_regression_unseparable'] = (
 DATA_HUB['logistic_regression_separable'] = (
     'csv', '/ml/logistic_regression_separable.csv',
     '97ff298c6aed70329f6f28757de04759f5600956')
+DATA_HUB['airfoil_self_noise'] = ('dat', '/ml/airfoil_self_noise.dat',
+                                  '76e5be1548fd8222e5074cf0faae75edff8cf93f')
 DATA_HUB['mnist'] = ('npz', '/ml/mnist.npz',
                      'e7727b719822ece6d78ca83af078bcd85ae81b0d')
 DATA_HUB['kaggle_house_train'] = ('csv', '/ml/kaggle_house_pred_train.csv',
@@ -1674,3 +1676,88 @@ def load_data_bananas(batch_size):
     val_iter = torch.utils.data.DataLoader(BananasDataset(is_train=False),
                                            batch_size)
     return train_iter, val_iter
+
+
+def load_data_airfoil_self_noise(batch_size=10, n=1500):
+    data = np.genfromtxt(download('airfoil_self_noise'),
+                         dtype=np.float32,
+                         delimiter='\t')
+    data = torch.from_numpy((data - data.mean(axis=0)) / data.std(axis=0))
+    data_iter = load_array((data[:n, :-1], data[:n, -1]),
+                           batch_size,
+                           is_train=True)
+    return data_iter, data.shape[1] - 1
+
+
+def train_optimization(trainer_fn,
+                       states,
+                       hyperparams,
+                       data_iter,
+                       feature_dim,
+                       num_epochs=2):
+    # Initialization
+    w = torch.normal(mean=0.0,
+                     std=0.01,
+                     size=(feature_dim, 1),
+                     requires_grad=True)
+    b = torch.zeros((1), requires_grad=True)
+    net, loss = lambda X: linreg(X, w, b), squared_loss
+    # Train
+    animator = Animator(xlabel='epoch',
+                        ylabel='loss',
+                        xlim=[0, num_epochs],
+                        ylim=[0.22, 0.35])
+    n, timer = 0, Timer()
+    for _ in range(num_epochs):
+        for X, y in data_iter:
+            l = loss(net(X), y).mean()  # 计算loss的均值
+            l.backward()
+            trainer_fn([w, b], states, hyperparams)
+            n += X.shape[0]
+            if n % 200 == 0:
+                timer.stop()
+                animator.add(n / X.shape[0] / len(data_iter),
+                             (evaluate_loss(net, data_iter, loss), ))
+                timer.start()
+    print(f'loss: {animator.Y[0][-1]:.3f}, {timer.avg():.3f} sec/epoch')
+    return timer.cumsum(), animator.Y[0]
+
+
+def train_concise_optimization(trainer_fn,
+                               hyperparams,
+                               data_iter,
+                               feature_dim,
+                               num_epochs=4):
+    # Initialization
+    net = nn.Sequential(nn.Linear(feature_dim, 1))
+
+    def init_weights(m):
+        if type(m) == nn.Linear:
+            torch.nn.init.normal_(m.weight, std=0.01)
+
+    net.apply(init_weights)
+
+    optimizer = trainer_fn(net.parameters(), **hyperparams)
+
+    loss = nn.MSELoss()
+    animator = Animator(xlabel='epoch',
+                        ylabel='loss',
+                        xlim=[0, num_epochs],
+                        ylim=[0.22, 0.35])
+    n, timer = 0, Timer()
+    for _ in range(num_epochs):
+        for X, y in data_iter:
+            optimizer.zero_grad()
+            out = net(X)
+            y = y.reshape(out.shape)
+            l = loss(out, y) / 2  # PyTorch的MSE Loss实现和我们的不同
+            l.backward()
+            optimizer.step()
+            n += X.shape[0]
+            if n % 200 == 0:
+                timer.stop()
+                animator.add(n / X.shape[0] / len(data_iter),
+                             (evaluate_loss(net, data_iter, loss) / 2, ))
+                timer.start()
+    print(f'loss: {animator.Y[0][-1]:.3f}, {timer.avg():.3f} sec/epoch')
+    return timer.cumsum(), animator.Y[0]
