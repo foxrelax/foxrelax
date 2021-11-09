@@ -1,15 +1,5 @@
-#! /usr/bin/env python3
 # -*- coding:utf-8 -*-
-import sys
-import os
 import unittest
-
-sys.path.insert(
-    0,
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-
 from foxrelax.go.gotypes import (Player, Point)
 from foxrelax.go.goboard import Board
 from foxrelax.go.agent.helper import is_point_an_eye

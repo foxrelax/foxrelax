@@ -12,10 +12,22 @@ class Player(Enum):
 
     @property
     def other(self):
+        """
+        assert Player.WHITE.other == Player.BLACK
+        assert Player.BLACK.other == Player.WHITE
+        """
         return Player.BLACK if self == Player.WHITE else Player.WHITE
 
 
 class Point(namedtuple('Point', 'row col')):
+    """
+    # 构造一个point
+    point = Point(row=1, col=1)
+
+    # 直接比较
+    assert Point(row=1, col=2) == Point(row=1, col=2)
+    assert hash(Point(row=1, col=2)) == hash(Point(row=1, col=2))
+    """
     def neighbors(self):
         return [
             Point(self.row - 1, self.col),

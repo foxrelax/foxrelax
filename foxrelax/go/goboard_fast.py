@@ -5,7 +5,7 @@ from foxrelax.go.utils import MoveAge
 from foxrelax.go import zobrist
 from foxrelax.go.scoring import compute_game_result
 
-__all__ = ['Board', 'GameState', 'Move']
+__all__ = ['Move', 'GoString', 'Board', 'GameState']
 
 neighbor_tables = {}
 corner_tables = {}
@@ -48,6 +48,51 @@ def init_corner_table(dim):
 
 class IllegalMoveError(Exception):
     pass
+
+
+class Move:
+    """
+    表示一个回合中可能采取的动作. 有三种动作:
+    1. 在棋盘上落下一颗棋子(play)
+    2. 跳过回合(pass)
+    3. 直接认输(resign)
+
+    遵循美国围棋协会(AGA)的惯例, 我们使用术语动作(move)来表示这三种行动中的一个. 在实际棋局中, 需要传递一个Point对象指定落子的位置.
+    在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
+    """
+    def __init__(self, point=None, is_pass=False, is_resign=False):
+        assert (point is not None) ^ is_pass ^ is_resign
+        self.point = point
+        self.is_play = (point is not None)
+        self.is_pass = is_pass
+        self.is_resign = is_resign
+
+    @classmethod
+    def play(cls, point):
+        return Move(point)
+
+    @classmethod
+    def pass_turn(cls):
+        return Move(is_pass=True)
+
+    @classmethod
+    def resign(cls):
+        return Move(is_resign=True)
+
+    def __str__(self):
+        if self.is_pass:
+            return 'pass'
+        if self.is_resign:
+            return 'resign'
+        return f'(r {self.point.row}, c {self.point.col})'
+
+    def __hash__(self):
+        return hash((self.is_play, self.is_pass, self.is_resign, self.point))
+
+    def __eq__(self, other):
+        return (self.is_play, self.is_pass, self.is_resign,
+                self.point) == (other.is_play, other.is_pass, other.is_resign,
+                                other.point)
 
 
 class GoString:
@@ -273,51 +318,6 @@ class Board:
 
     def zobrist_hash(self):
         return self._hash
-
-
-class Move:
-    """
-    表示一个回合中可能采取的动作. 有三种动作:
-    1. 在棋盘上落下一颗棋子(play)
-    2. 跳过回合(pass)
-    3. 直接认输(resign)
-
-    遵循美国围棋协会(AGA)的惯例, 我们使用术语动作(move)来表示这三种行动中的一个. 在实际棋局中, 需要传递一个Point对象指定落子的位置.
-    在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
-    """
-    def __init__(self, point=None, is_pass=False, is_resign=False):
-        assert (point is not None) ^ is_pass ^ is_resign
-        self.point = point
-        self.is_play = (point is not None)
-        self.is_pass = is_pass
-        self.is_resign = is_resign
-
-    @classmethod
-    def play(cls, point):
-        return Move(point)
-
-    @classmethod
-    def pass_turn(cls):
-        return Move(is_pass=True)
-
-    @classmethod
-    def resign(cls):
-        return Move(is_resign=True)
-
-    def __str__(self):
-        if self.is_pass:
-            return 'pass'
-        if self.is_resign:
-            return 'resign'
-        return f'(r {self.point.row}, c {self.point.col})'
-
-    def __hash__(self):
-        return hash((self.is_play, self.is_pass, self.is_resign, self.point))
-
-    def __eq__(self, other):
-        return (self.is_play, self.is_pass, self.is_resign,
-                self.point) == (other.is_play, other.is_pass, other.is_resign,
-                                other.point)
 
 
 class GameState:

@@ -4,7 +4,7 @@ import copy
 from foxrelax.go.gotypes import (Point, Player)
 from foxrelax.go.scoring import compute_game_result
 
-__all__ = ['Board', 'GameState', 'Move']
+__all__ = ['Move', 'GoString', 'Board', 'GameState']
 
 
 class IllegalMoveError(Exception):
@@ -22,7 +22,6 @@ class Move:
     在使用中我们通常调用Move.play(), Move.pass_turn(), Move.resign()来构造一个动作, 而不是直接调用Move的构造函数
     """
     def __init__(self, point=None, is_pass=False, is_resign=False):
-        assert (point is not None) ^ is_pass ^ is_resign
         self.point = point
         self.is_play = (point is not None)
         self.is_pass = is_pass
@@ -39,6 +38,21 @@ class Move:
     @classmethod
     def resign(cls):
         return Move(is_resign=True)
+
+    def __str__(self):
+        if self.is_pass:
+            return 'pass'
+        if self.is_resign:
+            return 'resign'
+        return f'(r {self.point.row}, c {self.point.col})'
+
+    def __hash__(self):
+        return hash((self.is_play, self.is_pass, self.is_resign, self.point))
+
+    def __eq__(self, other):
+        return (self.is_play, self.is_pass, self.is_resign,
+                self.point) == (other.is_play, other.is_pass, other.is_resign,
+                                other.point)
 
 
 class GoString:

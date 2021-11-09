@@ -156,7 +156,6 @@ class GoDataProcessor:
         counter = 0
         for index in game_list:
             name = name_list[index + 1]
-            print(name)
             if not name.endswith('.sgf'):
                 raise ValueError(name + ' is not a valid sgf')
             sgf_content = zip_file.extractfile(name).read()
@@ -343,7 +342,7 @@ def test():
     data_file_name = base_name + 'train'
     process = GoDataProcessor()
     shutil.copy(zip_file_path, os.path.join(process.data_dir, zip_file_name))
-    process.process_zip(zip_file_name, data_file_name, [0, 1], chunk_size=None)
+    process.process_zip(zip_file_name, data_file_name, [0], chunk_size=None)
 
 
 if __name__ == '__main__':
