@@ -2,6 +2,9 @@
 
 DATA_URL = 'http://oss.foxrelax.com'
 DATA_HUB = dict()
+DATA_HUB['wikitext-2-v1'] = (
+    'zip', '/ml/wikitext-2-v1.zip', '3c914d17d80b1459be871a5039ac23e752a53cbe',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/wikitext-2-v1.zip')
 DATA_HUB['logistic_regression_unseparable'] = (
     'csv', '/ml/logistic_regression_unseparable.csv',
     'f7a9c08c4b11fa8e03367a996ac75e5539e25c36',
