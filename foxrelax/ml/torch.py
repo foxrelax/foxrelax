@@ -528,28 +528,40 @@ def tokenize(lines, token='word'):
     return [line.split() if token == 'word' else list(line) for line in lines]
 
 
+def count_corpus(tokens):
+    """
+    统计token的频率
+    """
+    # Flatten a 2D list if needed
+    if tokens and isinstance(tokens[0], list):
+        # 将词元列表展平成使用词元填充的一个列表
+        tokens = [token for line in tokens for token in line]
+    return collections.Counter(tokens)
+
+
 class Vocab:
-    """Vocabulary for text"""
-    def __init__(self, tokens=[], min_freq=0, reserved_tokens=[]):
-        # Flatten a 2D list if needed
-        if tokens and isinstance(tokens[0], list):
-            tokens = [token for line in tokens for token in line]
-        # Count token frequencies
-        counter = collections.Counter(tokens)
+    """文本词表"""
+    def __init__(self, tokens=None, min_freq=0, reserved_tokens=None):
+        """Defined in :numref:`sec_text_preprocessing`"""
+        if tokens is None:
+            tokens = []
+        if reserved_tokens is None:
+            reserved_tokens = []
+        # 按出现频率排序
+        counter = count_corpus(tokens)
         self.token_freqs = sorted(counter.items(),
                                   key=lambda x: x[1],
                                   reverse=True)
-        # The list of unique tokens
-        self.idx_to_token = list(
-            sorted(
-                set(['<unk>'] + reserved_tokens + [
-                    token
-                    for token, freq in self.token_freqs if freq >= min_freq
-                ])))
-        self.token_to_idx = {
-            token: idx
-            for idx, token in enumerate(self.idx_to_token)
-        }
+        # 未知词元的索引为0
+        self.unk, uniq_tokens = 0, ['<unk>'] + reserved_tokens
+        uniq_tokens += [
+            token for token, freq in self.token_freqs
+            if freq >= min_freq and token not in uniq_tokens
+        ]
+        self.idx_to_token, self.token_to_idx = [], dict()
+        for token in uniq_tokens:
+            self.idx_to_token.append(token)
+            self.token_to_idx[token] = len(self.idx_to_token) - 1
 
     def __len__(self):
         return len(self.idx_to_token)
@@ -563,10 +575,6 @@ class Vocab:
         if not isinstance(indices, (list, tuple)):
             return self.idx_to_token[indices]
         return [self.idx_to_token[index] for index in indices]
-
-    @property
-    def unk(self):  # Index for the unknown token
-        return self.token_to_idx['<unk>']
 
 
 def load_corpus_time_machine(max_tokens=-1, token='char'):
@@ -1481,7 +1489,40 @@ def bbox_to_rect(bbox, color):
 
 
 def multibox_prior(data, sizes, ratios):
-    """生成以每个像素为中心具有不同形状的锚框"""
+    """
+    生成以每个像素为中心具有不同形状的锚框
+
+    返回:
+    返回的Y的形状reshape成: (data图像高度、data图像宽度、以同一像素为中心的锚框的数量, 4)
+    其中最后一个维度anchor box的格式是: (左上x, 左上y, 右下x, 右下y)
+
+    Example:
+    >>> h, w = 561, 728
+    >>> X = torch.randn(1, 3, h, w)
+    >>> Y = multibox_prior(X, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5])
+    >>> Y.shape  # (1, (3+3-1)*h*w, 4)=(1, 5x561x728, 4)
+    torch.Size([1, 2042040, 4]) - 返回的形状是: (批量大小, 锚框的数量, 4)
+
+    # 我们将返回的Y的形状reshape成: (图像高度、图像宽度、以同一像素为中心的锚框的数量, 4), 
+    # 这样就可以获取以任意一像素为中心的锚框了
+    >>> boxes = Y.reshape(h, w, 5, 4)
+    >>> boxes[255, 255, 0, :] # 获取以(255, 255)这个像素点为中心的第1个锚框
+    tensor([0.06, 0.08, 0.64, 0.83])
+
+    >>> boxes[255, 255, 1, :] # 获取以(255, 255)这个像素点为中心的第2个锚框
+    tensor([0.16, 0.21, 0.54, 0.71])
+
+    >>> boxes[255, 255, :, :] # 获取以(255, 255)这个像素点为中心的所有锚框, 一共3x3-1=5个
+    tensor([[ 0.06,  0.08,  0.64,  0.83],
+            [ 0.16,  0.21,  0.54,  0.71],
+            [ 0.25,  0.33,  0.45,  0.58],
+            [-0.06,  0.19,  0.76,  0.72],
+            [ 0.15, -0.07,  0.56,  0.99]])
+    """
+    # 参数:
+    # data.shape - (batch_size, C, H, W)
+    # sizes.shape - (num_sizes, )
+    # ratios.shape - (num_ratios)
     in_height, in_width = data.shape[-2:]
     device, num_sizes, num_ratios = data.device, len(sizes), len(ratios)
     boxes_per_pixel = (num_sizes + num_ratios - 1)  # 每个像素对应的box数量
@@ -1541,7 +1582,12 @@ def multibox_prior(data, sizes, ratios):
 
 
 def show_bboxes(axes, bboxes, labels=None, colors=None):
-    """显示所有边界框"""
+    """
+    显示所有边界框
+    """
+
+    # 参数:
+    # bboxes.shape - (num_bboxes, 4)
     def _make_list(obj, default_values=None):
         if obj is None:
             obj = default_values
@@ -1568,7 +1614,27 @@ def show_bboxes(axes, bboxes, labels=None, colors=None):
 
 
 def box_iou(boxes1, boxes2):
-    """计算两个锚框或边界框列表中成对的交并比"""
+    """
+    计算两个锚框或边界框列表中成对的交并比
+
+    Examples:
+    >>> boxes1
+    tensor([[0.06, 0.08, 0.64, 0.83],
+            [0.16, 0.21, 0.54, 0.71],
+            [0.25, 0.33, 0.45, 0.58]])
+    >>> boxes2
+    tensor([[-0.06,  0.19,  0.76,  0.72],
+            [ 0.15, -0.07,  0.56,  0.99]])
+
+    # 返回的shape是: (boxes1的数量, boxes2的数量)
+    >>> box_iou(boxes1, boxes2)
+    tensor([[0.55, 0.55],
+            [0.44, 0.44],
+            [0.11, 0.11]])
+    """
+    # 参数:
+    # boxes1.shape - (boxes1的数量, 4)
+    # boxes2.shape - (boxes2的数量, 4)
     box_area = lambda boxes: ((boxes[:, 2] - boxes[:, 0]) *
                               (boxes[:, 3] - boxes[:, 1]))
     # `boxes1`, `boxes2`, `areas1`, `areas2`的形状:
@@ -1591,13 +1657,21 @@ def box_iou(boxes1, boxes2):
 
 
 def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
-    """将最接近的真实边界框分配给锚框"""
+    """
+    将最接近的真实边界框分配给锚框
+    
+    返回: (num_anchors, ), 也就是每个anchor box对应一个真实框的索引
+    """
+    # 参数:
+    # ground_truth.shape - (num_gt_boxes, 4)
+    # anchors.shape - (num_anchors, 4)
     num_anchors, num_gt_boxes = anchors.shape[0], ground_truth.shape[0]
     # 位于第i行和第j列的元素x_ij是锚框i和真实边界框j的IoU
     # jaccard.shape - (num_anchors, num_gt_boxes)
     jaccard = box_iou(anchors, ground_truth)
 
     # 对于每个锚框, 分配的真实边界框的张量
+    # anchors_bbox_map.shape - (num_anchors, )
     anchors_bbox_map = torch.full((num_anchors, ),
                                   -1,
                                   dtype=torch.long,
@@ -1608,7 +1682,15 @@ def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
     max_ious, indices = torch.max(jaccard, dim=1)
     anc_i = torch.nonzero(max_ious >= iou_threshold).reshape(-1)
     box_j = indices[max_ious >= iou_threshold]
+    # 到目前为止每一行有满足max_ious >= iou_threshold条件的anchor box, 都会被分配
+    # 一个ground truth box索引
     anchors_bbox_map[anc_i] = box_j
+
+    # 下面这部分逻辑处理的是这种情况:
+    # |    | B1 |  B2  |  B3  | B4 |
+    # | A1 | .. | 0.85 | 0.80 | .. |
+    # | A2 | .. | 0.98 | ..   | .. |
+    # 上面的算法会把B2同时分配给A2和A1, 执行下面的逻辑, 会把B3分配给A1, 来覆盖之前的分配
     col_discard = torch.full((num_anchors, ), -1)
     row_discard = torch.full((num_gt_boxes, ), -1)
     for _ in range(num_gt_boxes):
@@ -1624,7 +1706,15 @@ def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
 
 
 def offset_boxes(anchors, assigned_bb, eps=1e-6):
-    """对锚框偏移量的转换"""
+    """
+    对锚框偏移量的转换
+
+    返回的是每个锚框对应的offset, 形状是(num_anchors, 4)
+    """
+    # 参数:
+    # anchors.shape - (num_anchors, 4)
+    # assigned_bb.shape - (num_anchors, 4)
+
     # c_anc.shape - (num_anchors, 4)
     # c_assigned_bb.shape - (num_anchors, 4)
     c_anc = box_corner_to_center(anchors)
@@ -1640,10 +1730,44 @@ def offset_boxes(anchors, assigned_bb, eps=1e-6):
 
 
 def multibox_target(anchors, labels):
-    """使用真实边界框标记锚框"""
+    """
+    使用真实边界框标记锚框
+
+    返回:
+    (bbox_offset, bbox_mask, class_labels)
+    bbox_offset.shape - (batch_size, num_anchors*4)
+    bbox_mask.shape - (batch_size, num_anchors*4)
+    class_labels.shape - (batch_size, num_anchors)
+    Examples:
+    >>> ground_truth = torch.tensor(
+            [[0, 0.1, 0.08, 0.52, 0.92],
+             [1, 0.55, 0.2, 0.9, 0.88]])
+    >>> anchors = torch.tensor(
+            [[0, 0.1, 0.2, 0.3], 
+             [0.15, 0.2, 0.4, 0.4],
+             [0.63, 0.05, 0.88, 0.98], 
+             [0.66, 0.45, 0.8, 0.8],
+             [0.57, 0.3, 0.92, 0.9]])
+    >>> labels = multibox_target(
+            anchors.unsqueeze(dim=0),
+            ground_truth.unsqueeze(dim=0))
+
+    (tensor([[-0.00e+00, -0.00e+00, -0.00e+00, -0.00e+00,  
+              1.40e+00,  1.00e+01, 2.59e+00,  7.18e+00, 
+              -1.20e+00,  2.69e-01,  1.68e+00, -1.57e+00,
+              -0.00e+00, -0.00e+00, -0.00e+00, -0.00e+00, 
+              -5.71e-01, -1.00e+00, 4.17e-06,  6.26e-01]]),
+     tensor([[0., 0., 0., 0., 
+              1., 1., 1., 1., 
+              1., 1., 1., 1., 
+              0., 0., 0., 0., 
+              1., 1., 1., 1.]]),
+     tensor([[0, 1, 2, 0, 2]]))
+    """
     # 参数:
     # anchors.shape - (batch_size, num_anchors, 4)
     # labels.shape - (batch_size, num_gt_boxes, 5)
+    # 注意: label第一个维度是类型, 从0开始, 我们再返回的时候类型默认会+1, 从1开始, 我们使用0当做负类
 
     # 处理之后:
     # anchors.shape - (num_anchors, 4)
@@ -1685,18 +1809,27 @@ def multibox_target(anchors, labels):
         # 偏移量转换
         # offset.shape - (num_anchors, 4)
         offset = offset_boxes(anchors, assigned_bb) * bbox_mask
-        batch_offset.append(offset.reshape(-1))  # (num_enchors*4, )
-        batch_mask.append(bbox_mask.reshape(-1))  # (num_echors*4, )
+        batch_offset.append(offset.reshape(-1))  # (num_anchors*4, )
+        batch_mask.append(bbox_mask.reshape(-1))  # (num_achors*4, )
         batch_class_labels.append(class_labels)  # (num_anchors, )
 
-    bbox_offset = torch.stack(batch_offset)  # (batch_size, num_enchors*4)
-    bbox_mask = torch.stack(batch_mask)  # (batch_size, num_enchors*4)
-    class_labels = torch.stack(batch_class_labels)  # (batch_size, num_enchors)
+    bbox_offset = torch.stack(batch_offset)  # (batch_size, num_anchors*4)
+    bbox_mask = torch.stack(batch_mask)  # (batch_size, num_anchors*4)
+    class_labels = torch.stack(batch_class_labels)  # (batch_size, num_anchors)
     return (bbox_offset, bbox_mask, class_labels)
 
 
 def offset_inverse(anchors, offset_preds):
-    """根据带有预测偏移量的锚框来预测边界框"""
+    """
+    根据带有预测偏移量的锚框来预测边界框
+
+    返回:
+    predicted_bbox.shape - (num_anchors, 4)
+    """
+    # 参数:
+    # anchors.shape - (num_anchors, 4)
+    # offset_preds.shape - (num_anchors, 4)
+
     # anc.shape - (num_anchors, 4)
     anc = box_corner_to_center(anchors)
 
@@ -1710,6 +1843,94 @@ def offset_inverse(anchors, offset_preds):
     pred_bbox = torch.cat((pred_bbox_xy, pred_bbox_wh), axis=1)
     predicted_bbox = box_center_to_corner(pred_bbox)
     return predicted_bbox
+
+
+def nms(boxes, scores, iou_threshold):
+    """
+    使用最大抑制, 去掉多于的边界框, 返回最终保留下来的边界框的索引
+
+    返回最终保留的边界框的索引, 返回keep中的索引是按照预测概率从大到小排序过的
+    (num_keep, ), 其中num_keep <= num_anchors
+    """
+    # 参数:
+    # boxes.shape - (num_anchors, 4)
+    # scores.shape - (num_anchors, ) 每个anchor box对应的最大类的概率值
+
+    # B.shape - (num_anchors, ) 概率从大到小的anchor box的索引
+    B = torch.argsort(scores, dim=-1, descending=True)
+    keep = []  # 保留预测边界框的指标
+    while B.numel() > 0:
+        i = B[0]
+        keep.append(i)
+        if B.numel() == 1: break
+        iou = box_iou(boxes[i, :].reshape(-1, 4),
+                      boxes[B[1:], :].reshape(-1, 4)).reshape(-1)
+        inds = torch.nonzero(iou <= iou_threshold).reshape(-1)
+        B = B[inds + 1]
+    return torch.tensor(keep, device=boxes.device)
+
+
+def multibox_detection(cls_probs,
+                       offset_preds,
+                       anchors,
+                       nms_threshold=0.5,
+                       pos_threshold=0.009999999):
+    """
+    使用非极大值抑制来预测边界框
+
+    返回:
+    (batch_size, num_anchors, 6)
+    6个数字中, 第一个是类别, 从0开始; 第二个是对应的概率; 后面四个是预测的边框
+    """
+    # 参数:
+    # cls_probs.shape - (batch_size, num_class, num_anchors)
+    # offset_preds.shape - (batch_size, num_anchors*4)
+    # anchors.shape - (batch_size, num_anchors, 4)
+    device, batch_size = cls_probs.device, cls_probs.shape[0]
+    # 如果batch_size=1, 则anchors.shape会变为(num_anchors, 4)
+    anchors = anchors.squeeze(0)
+    num_classes, num_anchors = cls_probs.shape[1], cls_probs.shape[2]
+    out = []
+    for i in range(batch_size):
+        # cls_prob.shape - (num_class, num_anchors)
+        # offset_pred.shape - (num_anchors, 4)
+        cls_prob, offset_pred = cls_probs[i], offset_preds[i].reshape(-1, 4)
+        # cls_prob[0]表示的是背景的概率, 我们不考虑背景
+        # conf.shape - (num_anchors, ), 每个anchor box对应的最大类的概率值
+        # class_id.shape - (num_anchors, ), 每个anchor box对应的预测概率最大的类
+        conf, class_id = torch.max(cls_prob[1:], 0)
+        # predicted_bb.shape - (num_anchors, 4)
+        predicted_bb = offset_inverse(anchors, offset_pred)
+        # keep.shape - (num_keep, )
+        keep = nms(predicted_bb, conf, nms_threshold)
+
+        # 找到所有的 non_keep 索引，并将类设置为背景
+        all_idx = torch.arange(num_anchors, dtype=torch.long, device=device)
+        # combined.shape - (num_anchors + num_keep, )
+        combined = torch.cat((keep, all_idx))
+        uniques, counts = combined.unique(return_counts=True)
+        # non_keep.shape - (num_anchors - num_keep, )
+        non_keep = uniques[counts == 1]
+
+        # 按照预测概率排序过的anchors box的索引
+        # all_id_sorted.shape - (num_anchors, )
+        all_id_sorted = torch.cat((keep, non_keep))
+        class_id[non_keep] = -1  # 被NMS排除的预测
+
+        # 对class_id, conf, predicted_bb按照all_id_sorted排序
+        class_id = class_id[all_id_sorted]
+        conf, predicted_bb = conf[all_id_sorted], predicted_bb[all_id_sorted]
+        # `pos_threshold` 是一个用于非背景预测的阈值, 对于小于这个阈值的过滤掉
+        below_min_idx = (conf < pos_threshold)
+        class_id[below_min_idx] = -1
+        conf[below_min_idx] = 1 - conf[below_min_idx]
+        # pred_info.shape - (num_anchors, 6)
+        pred_info = torch.cat(
+            (class_id.unsqueeze(1), conf.unsqueeze(1), predicted_bb), dim=1)
+        out.append(pred_info)
+    # (batch_size, num_anchors, 6)
+    # 6个数字中, 第一个是类别, 从0开始; 第二个是对应的概率; 后面四个是预测的边框
+    return torch.stack(out)
 
 
 # 目录结构(图片的尺寸都是256x256):
@@ -2497,3 +2718,166 @@ class BERTModel(nn.Module):
         # 用于下一句预测的多层感知机分类器的隐藏层. 0是"<cls>"标记的索引
         nsp_Y_hat = self.nsp(self.hidden(encoded_X[:, 0, :]))
         return encoded_X, mlm_Y_hat, nsp_Y_hat
+
+
+def read_ptb():
+    """
+    将PTB数据集加载到文本行的列表中
+
+    ptb.zip
+    ptb.test.txt - 440K
+    ptb.train.txt - 4.9M
+    ptb.valid.txt - 391K
+    """
+    data_dir = download_extract('ptb')
+    # Read the training set.
+    with open(os.path.join(data_dir, 'ptb.train.txt')) as f:
+        raw_text = f.read()
+    return [line.split() for line in raw_text.split('\n')]
+
+
+def subsample(sentences, vocab):
+    """
+    下采样高频词, 返回下采样之后的sentences和counter
+
+    1. 过滤掉未知词元'<unk>'
+    2. 下采样sentences(一定概率的删除高频词, 频率越高, 删除的概率越大)
+    """
+    # 过滤掉未知词元'<unk>'
+    sentences = [[token for token in line if vocab[token] != vocab.unk]
+                 for line in sentences]
+    counter = count_corpus(sentences)
+    num_tokens = sum(counter.values())
+
+    # 如果在下采样期间保留词元, 则返回True
+    # 一定概率的删除高频词, 频率越高, 删除的概率越大
+    def keep(token):
+        return (random.uniform(0, 1) < math.sqrt(
+            1e-4 / counter[token] * num_tokens))
+
+    return ([[token for token in line if keep(token)]
+             for line in sentences], counter)
+
+
+def get_centers_and_contexts(corpus, max_window_size):
+    """
+    返回跳元模型中的中心词和上下文词
+
+    1. 遍历corpus的每一行
+    2. 遍历每一行的每一个token, 随机一个window_size进行采样
+    """
+    centers, contexts = [], []
+    for line in corpus:
+        # 要形成"中心词-上下文词"对, 每个句子至少需要有2个词
+        if len(line) < 2:
+            continue
+        centers += line  # 一次性增加了了n个centers
+        for i in range(len(line)):  # 上下文窗口中间`i`
+            window_size = random.randint(1, max_window_size)  # 随机一个窗口大小
+            indices = list(
+                range(max(0, i - window_size),
+                      min(len(line), i + 1 + window_size)))
+            # 从上下文词中排除中心词
+            indices.remove(i)
+            contexts.append([line[idx] for idx in indices])
+    return centers, contexts
+
+
+class RandomGenerator:
+    """
+    根据n个采样权重在{1, ..., n}中随机抽取
+    """
+    def __init__(self, sampling_weights):
+        # 索引为1、2、...（索引0是vocab中排除的未知标记<unk>）
+        self.population = list(range(1, len(sampling_weights) + 1))
+        self.sampling_weights = sampling_weights  # 采样权重
+        self.candidates = []
+        self.i = 0
+
+    def draw(self):
+        if self.i == len(self.candidates):
+            # 根据sampling_weights来采样:
+            # 一次性采样出来, 缓存`k`个随机采样结果
+            self.candidates = random.choices(self.population,
+                                             self.sampling_weights,
+                                             k=10000)
+            self.i = 0
+        self.i += 1
+        return self.candidates[self.i - 1]
+
+
+def get_negatives(all_contexts, vocab, counter, K):
+    """
+    返回负采样中的噪声词
+    """
+    # 索引为1、2、...（索引0是vocab中排除的未知标记<unk>）
+    sampling_weights = [
+        counter[vocab.to_tokens(i)]**0.75 for i in range(1, len(vocab))
+    ]
+    all_negatives, generator = [], RandomGenerator(sampling_weights)
+    for contexts in all_contexts:
+        negatives = []
+        while len(negatives) < len(contexts) * K:
+            neg = generator.draw()
+            # 注意: 我们做了特殊处理, 噪声词不能是上下文词
+            if neg not in contexts:
+                negatives.append(neg)
+        all_negatives.append(negatives)
+    return all_negatives
+
+
+def batchify(data):
+    """
+    返回带有负采样的跳元模型的小批量样本
+    
+    输入的data: (centers, contexts, negatives) = data
+    输出的data: (centers, contexts_negatives, masks, labels)
+    """
+    max_len = max(len(c) + len(n) for _, c, n in data)
+    centers, contexts_negatives, masks, labels = [], [], [], []
+    for center, context, negative in data:
+        cur_len = len(context) + len(negative)
+        centers += [center]
+        contexts_negatives += [context + negative + [0] * (max_len - cur_len)]
+        masks += [[1] * cur_len + [0] * (max_len - cur_len)]
+        labels += [[1] * len(context) + [0] * (max_len - len(context))]
+    # 返回: ('centers', 'contexts_negatives', 'masks', 'labels')
+    return (torch.tensor(centers).reshape(
+        (-1, 1)), torch.tensor(contexts_negatives), torch.tensor(masks),
+            torch.tensor(labels))
+
+
+def load_data_ptb(batch_size, max_window_size, num_noise_words):
+    """下载PTB数据集，然后将其加载到内存中。"""
+    num_workers = get_dataloader_workers()
+    sentences = read_ptb()
+    vocab = Vocab(sentences, min_freq=10)
+    subsampled, counter = subsample(sentences, vocab)
+    corpus = [vocab[line] for line in subsampled]
+    all_centers, all_contexts = get_centers_and_contexts(
+        corpus, max_window_size)
+    all_negatives = get_negatives(all_contexts, vocab, counter,
+                                  num_noise_words)
+
+    class PTBDataset(torch.utils.data.Dataset):
+        def __init__(self, centers, contexts, negatives):
+            assert len(centers) == len(contexts) == len(negatives)
+            self.centers = centers
+            self.contexts = contexts
+            self.negatives = negatives
+
+        def __getitem__(self, index):
+            return (self.centers[index], self.contexts[index],
+                    self.negatives[index])
+
+        def __len__(self):
+            return len(self.centers)
+
+    dataset = PTBDataset(all_centers, all_contexts, all_negatives)
+
+    data_iter = torch.utils.data.DataLoader(dataset,
+                                            batch_size,
+                                            shuffle=True,
+                                            collate_fn=batchify,
+                                            num_workers=num_workers)
+    return data_iter, vocab
