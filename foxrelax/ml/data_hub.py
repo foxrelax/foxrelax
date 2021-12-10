@@ -60,6 +60,9 @@ DATA_HUB['img/cat3'] = (
 DATA_HUB['img/catdog'] = (
     'jpg', '/ml/img/catdog.jpg', '60b7d540db03eef6b9834329bccc4417ef349bf6',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/catdog.jpg')
+DATA_HUB['img/banana'] = (
+    'jpg', '/ml/img/banana.jpg', 'cdcc1e668faf05c173389b6a73d33ed8d44cf4b4',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/banana.jpg')
 DATA_HUB['go/features-20'] = (
     'npy', '/ml/go/features-20.npy',
     '3f84459adb1d5dd66a6395dfbc513b99349fd8f0',

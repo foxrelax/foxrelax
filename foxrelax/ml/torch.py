@@ -1493,8 +1493,10 @@ def multibox_prior(data, sizes, ratios):
     生成以每个像素为中心具有不同形状的锚框
 
     返回:
-    返回的Y的形状reshape成: (data图像高度、data图像宽度、以同一像素为中心的锚框的数量, 4)
+    返回的Y的形状: (1, boxes_per_pixel*h*w, 4)
     其中最后一个维度anchor box的格式是: (左上x, 左上y, 右下x, 右下y)
+
+    Y也可以reshape成: (data图像高度、data图像宽度、以同一像素为中心的锚框的数量, 4)
 
     Example:
     >>> h, w = 561, 728
@@ -1578,6 +1580,7 @@ def multibox_prior(data, sizes, ratios):
     output = out_grid + anchor_manipulations
 
     # output.shape - (1, boxes_per_pixel*h*w, 4)
+    # 批量大小固定为1, 生成的锚框和批量大小无关
     return output.unsqueeze(0)
 
 
@@ -1963,6 +1966,8 @@ def read_data_bananas(is_train=True):
     csv_data = pd.read_csv(csv_fname)
     csv_data = csv_data.set_index('img_name')
     images, targets = [], []
+    # 使用read_image一张图片一张图片的读取, 这个方法可以把JPEG/PNG image转换成
+    # 3-D RGB Tensor, 每个像素是取值在0-255之间的uint8
     for img_name, target in csv_data.iterrows():
         images.append(
             torchvision.io.read_image(
@@ -1975,6 +1980,10 @@ def read_data_bananas(is_train=True):
     # 图片尺寸的大小是256x256, 最终除以256表示坐标在图片的相对位置
     # image是一个长度为1000的list, 每个元素image.shape: (3, 256, 256)
     # targets.shape: (1000, 1, 5)
+    #
+    # 注意:
+    # targets插入一个维度的原因是有时候一张图片会有多个边界框
+    # targets最后除以256是将边缘框保存成0-1范围内的浮点数
     return images, torch.tensor(targets).unsqueeze(1) / 256
 
 
