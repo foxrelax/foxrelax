@@ -36,6 +36,7 @@ def download(name, cache_dir=os.path.join('..', 'data')):
                 if not data:
                     break
                 sha1.update(data)
+        print(sha1.hexdigest())
         if sha1.hexdigest() == sha1_hash:
             return fname
     print(f'正在从{url}下载{fname}...')

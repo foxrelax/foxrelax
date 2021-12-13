@@ -48,6 +48,13 @@ DATA_HUB['banana_detection'] = (
     'zip', '/ml/banana_detection.zip',
     '068e13f04d30c8b96d30e490394ce9ab7cbdf2d5',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/banana_detection.zip')
+DATA_HUB['img/autumn-oak'] = (
+    'jpg', '/ml/img/autumn-oak.jpg',
+    'bbe11f01403b9726bbc625589550e574fc45980a',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/autumn-oak.jpg')
+DATA_HUB['img/rainier'] = (
+    'jpg', '/ml/img/rainier.jpg', 'b0193ffd8ecea1631ac1092130017b884faafa30',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/rainier.jpg')
 DATA_HUB['img/cat1'] = (
     'jpg', '/ml/img/cat1.jpg', 'f9c5b905d908b97eeeb64ff34a46fa8b143f88f8',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/cat1.jpg')
