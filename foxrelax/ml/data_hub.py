@@ -84,6 +84,11 @@ DATA_HUB['go/labels-200'] = (
 DATA_HUB['go/labels-40k'] = (
     'npy', '/ml/go/labels-40k.npy', 'd959a562ef5189413a0d1b3525972e9c9dd2b598',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/go/labels-40k.npy')
+DATA_HUB['voc2012'] = (
+    'rar', '/ml/VOCtrainval_11-May-2012.tar',
+    '4e443f8a2eca6b1dac8a6c57641b67dd40621a49',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/VOCtrainval_11-May-2012.tar'
+)
 
 DATA_HUB['dlwpt/audio-chirp'] = (
     'zip', '/ml/dlwpt/audio-chirp.zip',
