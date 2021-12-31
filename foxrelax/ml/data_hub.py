@@ -145,3 +145,8 @@ DATA_HUB['dlwpt/cls_val_example'] = (
     '12d72732b6b7d3aa8fab98bf9207d166c2d22b16',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/dlwpt/cls_val_example.pt'
 )
+DATA_HUB['kaggle_cats_and_dogs'] = (
+    'zip', '/ml/kaggle_cats_and_dogs.zip',
+    'e993868e26c86dbd6c5ca257778097ce39b36f4e',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/kaggle_cats_and_dogs.zip'
+)

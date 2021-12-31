@@ -36,7 +36,6 @@ def download(name, cache_dir=os.path.join('..', 'data')):
                 if not data:
                     break
                 sha1.update(data)
-        print(sha1.hexdigest())
         if sha1.hexdigest() == sha1_hash:
             return fname
     print(f'正在从{url}下载{fname}...')
@@ -1461,7 +1460,10 @@ def resnet18(num_classes, in_channels=1):
 
 
 def box_corner_to_center(boxes):
-    """从（左上，右下）转换到（中间，宽度，高度）"""
+    """
+    从(左上, 右下)转换到(中间, 宽度, 高度)
+    一次可以处理多个box
+    """
     x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
     cx = (x1 + x2) / 2
     cy = (y1 + y2) / 2
@@ -1472,7 +1474,10 @@ def box_corner_to_center(boxes):
 
 
 def box_center_to_corner(boxes):
-    """从（中间，宽度，高度）转换到（左上，右下）"""
+    """
+    从(中间, 宽度, 高度)转换到(左上, 右下)
+    一次可以处理多个box
+    """
     cx, cy, w, h = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
     x1 = cx - 0.5 * w
     y1 = cy - 0.5 * h
@@ -1495,7 +1500,7 @@ def bbox_to_rect(bbox, color):
 
 def multibox_prior(data, sizes, ratios):
     """
-    生成以每个像素为中心具有不同形状的锚框
+    生成以data每个像素(我们只关心data的H和W)为中心具有不同形状的锚框
 
     返回:
     返回的Y的形状: (1, boxes_per_pixel*h*w, 4)
@@ -1591,11 +1596,15 @@ def multibox_prior(data, sizes, ratios):
 
 def show_bboxes(axes, bboxes, labels=None, colors=None):
     """
-    显示所有边界框
+    显示所有边界框(bboxes)
+
+    注意:
+    bboxes里面的元素需要是`(左上x, 左上y, 右下x, 右下y)`格式
     """
 
     # 参数:
     # bboxes.shape - (num_bboxes, 4)
+    # bboxes里面的元素需要是`(左上x, 左上y, 右下x, 右下y)`格式
     def _make_list(obj, default_values=None):
         if obj is None:
             obj = default_values
@@ -1666,7 +1675,7 @@ def box_iou(boxes1, boxes2):
 
 def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
     """
-    将最接近的真实边界框分配给锚框
+    将最接近的真实边界框(ground_truth)分配给锚框(anchors)
     
     返回: (num_anchors, ), 也就是每个anchor box对应一个真实框的索引
     """
@@ -1715,7 +1724,7 @@ def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
 
 def offset_boxes(anchors, assigned_bb, eps=1e-6):
     """
-    对锚框偏移量的转换
+    计算锚框的偏移量
 
     返回的是每个锚框对应的offset, 形状是(num_anchors, 4)
     """
@@ -1739,7 +1748,9 @@ def offset_boxes(anchors, assigned_bb, eps=1e-6):
 
 def multibox_target(anchors, labels):
     """
-    使用真实边界框标记锚框
+    使用真实边界框(labels)标记锚框(anchors)
+
+    输入需要标记的锚框(anchors)和真实边界框(labels), 这个函数会把每个锚框标记好然后返回
 
     返回:
     (bbox_offset, bbox_mask, class_labels)
@@ -1775,7 +1786,9 @@ def multibox_target(anchors, labels):
     # 参数:
     # anchors.shape - (batch_size, num_anchors, 4)
     # labels.shape - (batch_size, num_gt_boxes, 5)
-    # 注意: label第一个维度是类型, 从0开始, 我们再返回的时候类型默认会+1, 从1开始, 我们使用0当做负类
+    # 注意: 
+    # label第一个维度是类型, 从0开始, 我们再返回的时候类型默认会+1, 
+    # 从1开始, 我们使用0当做负类
 
     # 处理之后:
     # anchors.shape - (num_anchors, 4)
@@ -1829,7 +1842,7 @@ def multibox_target(anchors, labels):
 
 def offset_inverse(anchors, offset_preds):
     """
-    根据带有预测偏移量的锚框来预测边界框
+    根据带有预测偏移量(offset_preds)的锚框(anchors)来预测边界框
 
     返回:
     predicted_bbox.shape - (num_anchors, 4)
@@ -1891,8 +1904,8 @@ def multibox_detection(cls_probs,
     6个数字中, 第一个是类别, 从0开始; 第二个是对应的概率; 后面四个是预测的边框
     """
     # 参数:
-    # cls_probs.shape - (batch_size, num_class, num_anchors)
-    # offset_preds.shape - (batch_size, num_anchors*4)
+    # cls_probs.shape - (batch_size, num_class, num_anchors) 预测的类别
+    # offset_preds.shape - (batch_size, num_anchors*4) 预测的偏移
     # anchors.shape - (batch_size, num_anchors, 4)
     device, batch_size = cls_probs.device, cls_probs.shape[0]
     # 如果batch_size=1, 则anchors.shape会变为(num_anchors, 4)
