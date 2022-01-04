@@ -67,6 +67,9 @@ DATA_HUB['img/cat3'] = (
 DATA_HUB['img/catdog'] = (
     'jpg', '/ml/img/catdog.jpg', '60b7d540db03eef6b9834329bccc4417ef349bf6',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/catdog.jpg')
+DATA_HUB['img/elephant'] = (
+    'jpg', '/ml/img/elephant.jpg', '9225c1b5be359a4fe7617d5f9cc6e6a28155b624',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/elephant.jpg')
 DATA_HUB['img/banana'] = (
     'jpg', '/ml/img/banana.jpg', 'cdcc1e668faf05c173389b6a73d33ed8d44cf4b4',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/banana.jpg')
@@ -150,3 +153,11 @@ DATA_HUB['kaggle_cats_and_dogs'] = (
     'e993868e26c86dbd6c5ca257778097ce39b36f4e',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/kaggle_cats_and_dogs.zip'
 )
+
+DATA_HUB['aclImdb'] = (
+    'zip', '/ml/aclImdb.zip', '996f2a201ddb7d90f0333d177d26ccb876b86e2f',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/aclImdb.zip')
+
+DATA_HUB['glove.6B'] = (
+    'zip', '/ml/glove.6B.zip', '7d533878207f2d38ed956a75dd69729b4db72921',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.zip')
