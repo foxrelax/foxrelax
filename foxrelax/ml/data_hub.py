@@ -161,3 +161,9 @@ DATA_HUB['aclImdb'] = (
 DATA_HUB['glove.6B'] = (
     'zip', '/ml/glove.6B.zip', '7d533878207f2d38ed956a75dd69729b4db72921',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.zip')
+
+DATA_HUB['jena_climate_2009_2016'] = (
+    'csv', '/ml/jena_climate_2009_2016.csv',
+    '9e3b156e325305a37bda2aca265cee47cff17d90',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/jena_climate_2009_2016.csv'
+)
