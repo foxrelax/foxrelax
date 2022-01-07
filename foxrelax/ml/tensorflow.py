@@ -288,8 +288,8 @@ def load_data_jena_climate_2009_2016(lookback=1440,
             else:
                 if i + batch_size >= max_index:
                     i = min_index + lookback
-            rows = np.arange(i, min(i + batch_size, max_index))
-            i += len(rows)
+                rows = np.arange(i, min(i + batch_size, max_index))
+                i += len(rows)
             samples = np.zeros((len(rows), lookback // step, data.shape[-1]))
             targets = np.zeros((len(rows), ))
             for j, row in enumerate(rows):
@@ -323,4 +323,5 @@ def load_data_jena_climate_2009_2016(lookback=1440,
     train_steps = (200000 - lookback) // batch_size
     val_steps = (300000 - 200001 - lookback) // batch_size
     test_steps = (len(float_data) - 300001 - lookback) // batch_size
-    return (train_gen, val_gen, test_gen), (train_steps, val_steps, test_steps)
+    return (train_gen, val_gen, test_gen), (train_steps, val_steps,
+                                            test_steps), float_data

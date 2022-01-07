@@ -167,3 +167,6 @@ DATA_HUB['jena_climate_2009_2016'] = (
     '9e3b156e325305a37bda2aca265cee47cff17d90',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/jena_climate_2009_2016.csv'
 )
+DATA_HUB['nietzsche'] = (
+    'txt', '/ml/nietzsche.txt', '9a3e251f79e7afabd9310e0f0e0ecd4b5a42d322',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/nietzsche.txt')
