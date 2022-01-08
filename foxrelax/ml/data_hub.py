@@ -162,6 +162,11 @@ DATA_HUB['glove.6B'] = (
     'zip', '/ml/glove.6B.zip', '7d533878207f2d38ed956a75dd69729b4db72921',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.zip')
 
+DATA_HUB['horse_or_human'] = (
+    'zip', '/ml/horse_or_human.zip',
+    '98dfc5bb708c49bfe78fbb05e1023f10186a0856',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/horse_or_human.zip')
+
 DATA_HUB['jena_climate_2009_2016'] = (
     'csv', '/ml/jena_climate_2009_2016.csv',
     '9e3b156e325305a37bda2aca265cee47cff17d90',
