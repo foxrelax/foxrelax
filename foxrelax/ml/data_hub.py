@@ -48,6 +48,18 @@ DATA_HUB['banana_detection'] = (
     'zip', '/ml/banana_detection.zip',
     '068e13f04d30c8b96d30e490394ce9ab7cbdf2d5',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/banana_detection.zip')
+
+DATA_HUB['img/style_transfer_abstract'] = (
+    'jpg', '/ml/img/style_transfer_abstract.jpg',
+    '409dc62ef81da6ef45d9a38991b91468613f9e7b',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/style_transfer_abstract.jpg'
+)
+DATA_HUB['img/style_transfer_dog'] = (
+    'jpg', '/ml/img/style_transfer_dog.jpg',
+    'f1d042827c2f2154a6d8043b8e8f07c1be612941',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img/style_transfer_dog.jpg'
+)
+
 DATA_HUB['img/autumn-oak'] = (
     'jpg', '/ml/img/autumn-oak.jpg',
     'bbe11f01403b9726bbc625589550e574fc45980a',
@@ -175,3 +187,8 @@ DATA_HUB['jena_climate_2009_2016'] = (
 DATA_HUB['nietzsche'] = (
     'txt', '/ml/nietzsche.txt', '9a3e251f79e7afabd9310e0f0e0ecd4b5a42d322',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/nietzsche.txt')
+
+DATA_HUB['img_align_celeba'] = (
+    'zip', '/ml/img_align_celeba.zip',
+    'cbe898ad4a1d686e4aefb445737717b3517bc70d',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/img_align_celeba.zip')
