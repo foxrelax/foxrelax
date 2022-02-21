@@ -41,6 +41,9 @@ DATA_HUB['time_machine'] = (
 DATA_HUB['fra_eng'] = (
     'zip', '/ml/fra_eng.zip', '02eee9efbc64e076be914c6c163740dd5d448b36',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/fra_eng.zip')
+DATA_HUB['cmn_eng'] = (
+    'zip', '/ml/cmn_eng.zip', '288cf6a866a4d3e658144aba3f47c99e6bb3876e',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/cmn_eng.zip')
 DATA_HUB['hotdog'] = (
     'zip', '/ml/hotdog.zip', 'fba480ffa8aa7e0febbb511d181409f899b9baa5',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/hotdog.zip')

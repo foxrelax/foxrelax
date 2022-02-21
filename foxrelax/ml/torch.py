@@ -1103,7 +1103,9 @@ class EncoderDecoder(nn.Module):
 
 
 class Seq2SeqEncoder(Encoder):
-    """用于序列到序列学习的循环神经网络编码器"""
+    """
+    用于序列到序列学习的循环神经网络编码器
+    """
     def __init__(self,
                  vocab_size,
                  embed_size,
@@ -1123,7 +1125,7 @@ class Seq2SeqEncoder(Encoder):
         2. 使用GRU来处理处理好的X得到输出
         """
 
-        # `X`输出的形状:(`batch_size`, `num_steps`)
+        # 参数:`X`的形状:(`batch_size`, `num_steps`)
         # 经过embedding处理之后的形状:(`batch_size`, `num_steps`, `embed_size`)
         X = self.embedding(X)
         # 在循环神经网络模型中，第一个轴对应于时间步
@@ -1786,8 +1788,8 @@ def multibox_target(anchors, labels):
     # 参数:
     # anchors.shape - (batch_size, num_anchors, 4)
     # labels.shape - (batch_size, num_gt_boxes, 5)
-    # 注意: 
-    # label第一个维度是类型, 从0开始, 我们再返回的时候类型默认会+1, 
+    # 注意:
+    # label第一个维度是类型, 从0开始, 我们再返回的时候类型默认会+1,
     # 从1开始, 我们使用0当做负类
 
     # 处理之后:
@@ -2144,19 +2146,51 @@ def show_heatmaps(matrices,
 
 
 def masked_softmax(X, valid_lens):
-    """通过在最后一个轴上(进行softmax计算的轴)遮蔽元素来执行softmax操作"""
-    # `X`: 3D张量, `valid_lens`: 1D或2D张量
+    """
+    通过在最后一个轴上(进行softmax计算的轴)遮蔽元素来执行softmax操作
+
+    输入:    
+    `X`: 3D张量, (batch_size, num_steps, size)
+    `valid_lens`: 1D或2D张量
+                  如果是1D张量就是(batch_size, )
+                  如果是2D张量就是(batch_size, num_steps)
+    输出:
+    (batch_size, num_steps, size)
+
+    Examples:
+    >>> masked_softmax(torch.rand(2, 2, 4), torch.tensor([2, 3]))
+    tensor([[[0.4773, 0.5227, 0.0000, 0.0000],
+            [0.4483, 0.5517, 0.0000, 0.0000]],
+
+            [[0.4079, 0.2658, 0.3263, 0.0000],
+            [0.3101, 0.2718, 0.4182, 0.0000]]])
+
+    >>> masked_softmax(torch.rand(2, 2, 4), torch.tensor([[1, 3], 
+                                                          [2, 4]]))
+    tensor([[[1.0000, 0.0000, 0.0000, 0.0000],
+            [0.3612, 0.2872, 0.3516, 0.0000]],
+
+            [[0.5724, 0.4276, 0.0000, 0.0000],
+            [0.3007, 0.2687, 0.1585, 0.2721]]])
+    """
     if valid_lens is None:
         return nn.functional.softmax(X, dim=-1)
     else:
         shape = X.shape
-        # 将valid_len转换成1D张量
+        # 将valid_lens转换成1D张量: (batch_size * num_steps, )
         if valid_lens.dim() == 1:
+            # valid_lens是1D张量就是(batch_size, ) -> (batch_size * num_steps, )
             valid_lens = torch.repeat_interleave(valid_lens, shape[1])
         else:
+            # 是2D张量就是(batch_size, num_steps) -> (batch_size * num_steps, )
             valid_lens = valid_lens.reshape(-1)
+
         # 在最后的轴上, 被遮蔽的元素使用一个非常大的负值替换, 从而其softmax(指数)输出为0
+        # 将X转换成: (batch_size, num_steps, size) -> (batch_size * num_steps, size)
+        # valid_lens: (batch_size * num_steps, )
         X = sequence_mask(X.reshape(-1, shape[-1]), valid_lens, value=-1e6)
+
+        # 返回的X形状: (batch_size, num_steps, size)
         return nn.functional.softmax(X.reshape(shape), dim=-1)
 
 
