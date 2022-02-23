@@ -2,9 +2,9 @@
 
 DATA_URL = 'http://oss.foxrelax.com'
 DATA_HUB = dict()
-DATA_HUB['wikitext-2-v1'] = (
-    'zip', '/ml/wikitext-2-v1.zip', '3c914d17d80b1459be871a5039ac23e752a53cbe',
-    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/wikitext-2-v1.zip')
+DATA_HUB['wikitext_2'] = (
+    'zip', '/ml/wikitext_2.zip', '81d2333b501a1d8c32bfe96859e2490991fee293',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/wikitext_2.zip')
 DATA_HUB['ptb'] = ('zip', '/ml/ptb.zip',
                    '319d85e578af0cdc590547f26231e4e31cdf1e42',
                    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/ptb.zip')
