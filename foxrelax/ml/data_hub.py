@@ -2,6 +2,10 @@
 
 DATA_URL = 'http://oss.foxrelax.com'
 DATA_HUB = dict()
+
+DATA_HUB['snli_1.0'] = (
+    'zip', '/ml/snli_1.0.zip', '9fcde07509c7e87ec61c640c1b2753d9041758e4',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/snli_1.0.zip')
 DATA_HUB['wikitext_2'] = (
     'zip', '/ml/wikitext_2.zip', '81d2333b501a1d8c32bfe96859e2490991fee293',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/wikitext_2.zip')
