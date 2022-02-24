@@ -3,6 +3,14 @@
 DATA_URL = 'http://oss.foxrelax.com'
 DATA_HUB = dict()
 
+DATA_HUB['bert.base.torch'] = (
+    'zip', '/ml/bert.base.torch.zip',
+    '225d66f04cae318b841a13d32af3acc165f253ac',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/bert.base.torch.zip')
+DATA_HUB['bert.small.torch'] = (
+    'zip', '/ml/bert.small.torch.zip',
+    'c72329e68a732bef0452e4b96a1c341c8910f81f',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/bert.small.torch.zip')
 DATA_HUB['snli_1.0'] = (
     'zip', '/ml/snli_1.0.zip', '9fcde07509c7e87ec61c640c1b2753d9041758e4',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/snli_1.0.zip')

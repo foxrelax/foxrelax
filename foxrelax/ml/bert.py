@@ -378,10 +378,11 @@ def _get_nsp_data_from_paragraph(paragraph, paragraphs, vocab, max_len):
     处理一个paragraph, 返回训练NSP的数据
 
     参数:
-    paragraph: e.g. [['this', 'movie', 'is', 'great'], ['i', 'like', 'it']]
+    paragraph: 句子列表, 其中每个句子都是token列表
+               e.g. [['this', 'movie', 'is', 'great'], ['i', 'like', 'it']]
     paragraphs: list of paragraph
     vocab: 字典
-    max_len: 最大长度(超过最大长度的tokens忽略掉)
+    max_len: 预训练期间的BERT输入序列的最大长度(超过最大长度的tokens忽略掉)
 
     返回: list of (tokens, segments, is_next)
     tokens: ['<cls>', 'this', 'movie', 'is', 'great', '<sep>', 'i', 'like', 'it', '<sep>']
@@ -406,8 +407,10 @@ def _replace_mlm_tokens(tokens, candidate_pred_positions, num_mlm_preds,
     处理一句话(tokens), 返回`MLM的输入, 预测位置以及标签`
 
     参数:
-    tokens: e.g. ['<cls>', 'this', 'movie', 'is', 'great', '<sep>', 'i', 'like', 'it', '<sep>']
+    tokens: 表示BERT输入序列的token列表
+            e.g. ['<cls>', 'this', 'movie', 'is', 'great', '<sep>', 'i', 'like', 'it', '<sep>']
     candidate_pred_positions: 后选预测位置的索引, 会在tokens中过滤掉<cls>, <sep>, 剩下的都算后选预测位置
+                              (特殊token <cls>, <sep>在MLM任务中不被预测)
                               e.g. ['<cls>', 'this', 'movie', 'is', 'great', '<sep>', 'i', 'like', 'it', '<sep>']对应的
                               后选预测位置是: [1,2,3,4,6,7,8]
     num_mlm_preds: 需要预测多少个token, 通常是len(tokens)的15%
@@ -455,9 +458,10 @@ def _get_mlm_data_from_tokens(tokens, vocab):
     vocab: 字典
 
     返回: (mlm_input_tokens_ids, pred_positions, mlm_pred_labels_ids)
-    mlm_input_tokens_ids: e.g. vocab[['<cls>', 'this', 'movie', '<mask>', 'great', '<sep>', 'i', 'like', 'it', '<sep>']]
-    pred_positions: e.g. [3, ...]
-    mlm_pred_labels_ids: e.g. vocab[['is', ...]]
+    mlm_input_tokens_ids: 输入tokens的索引
+                          e.g. vocab[['<cls>', 'this', 'movie', '<mask>', 'great', '<sep>', 'i', 'like', 'it', '<sep>']]
+    pred_positions: 需要预测的位置索引, e.g. [3, ...]
+    mlm_pred_labels_ids: 预测的标签索引, e.g. vocab[['is', ...]]
     """
     candidate_pred_positions = []  # list of int
     for i, token in enumerate(tokens):
@@ -626,7 +630,11 @@ def _get_batch_loss_bert(net, loss, vocab_size, tokens_X, segments_X,
                          valid_lens_x, pred_positions_X, mlm_weights_X, mlm_Y,
                          nsp_y):
     """
-    计算一个批量的loss
+    针对一个批量的数据:
+    1. BertModel前向传播
+    2. 计算MLM Loss
+    3. 计算NSP Loss
+    4. 计算最终Loss = MLM Loss + NPS Loss
 
     参数:
     net: BERTModel实例
@@ -720,3 +728,30 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
 
 # 训练BERT
 # train_bert(train_iter, net, loss, len(vocab), devices, 1000)
+
+# 用BERT表示文本
+# batch_size, max_len = 512, 64
+# train_iter, vocab = load_data_wiki(batch_size, max_len)
+# devices = ml.try_all_gpus()
+# def get_bert_encoding(net, tokens_a, tokens_b=None):
+#     """
+#     返回tokens_a和tokens_b中所有token的BERT表示
+
+#     参数:
+#     net: BERTModel实例
+#     tokens_a: e.g. ['this', 'movie', 'is', 'great']
+#     tokens_b: e.g. ['i', 'like', 'it']
+
+#     返回:
+#     encoded_X的形状: (1, num_steps, num_hiddens)
+#     """
+#     tokens, segments = get_tokens_and_segments(tokens_a, tokens_b)
+#     # token_ids的形状: (1, num_steps)
+#     token_ids = torch.tensor(vocab[tokens], device=devices[0]).unsqueeze(0)
+#     # segments的形状: (1, num_steps)
+#     segments = torch.tensor(segments, device=devices[0]).unsqueeze(0)
+#     # valid_len的形状: (1,)
+#     valid_len = torch.tensor(len(tokens), device=devices[0]).unsqueeze(0)
+#     # encoded_X的形状: (1, num_steps, num_hiddens)
+#     encoded_X, _, _ = net(token_ids, segments, valid_len)
+#     return encoded_X
