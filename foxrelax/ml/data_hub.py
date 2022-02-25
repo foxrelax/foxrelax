@@ -185,6 +185,12 @@ DATA_HUB['aclImdb'] = (
     'zip', '/ml/aclImdb.zip', '996f2a201ddb7d90f0333d177d26ccb876b86e2f',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/aclImdb.zip')
 
+DATA_HUB['glove.6B.50d'] = (
+    'zip', '/ml/glove.6B.50d.zip', '0b8703943ccdb6eb788e6f091b8946e82231bc4d',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.50d.zip')
+DATA_HUB['glove.6B.100d'] = (
+    'zip', '/ml/glove.6B.100d.zip', 'cd43bfb07e44e6f27cbcc7bc9ae3d80284fdaf5a',
+    'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.100d.zip')
 DATA_HUB['glove.6B'] = (
     'zip', '/ml/glove.6B.zip', '7d533878207f2d38ed956a75dd69729b4db72921',
     'https://foxrelax.oss-cn-hangzhou.aliyuncs.com/ml/glove.6B.zip')

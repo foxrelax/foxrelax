@@ -3081,3 +3081,160 @@ def load_data_voc(batch_size, crop_size):
                                             drop_last=True,
                                             num_workers=num_workers)
     return train_iter, test_iter
+
+
+def read_snli(data_dir, is_train):
+    """
+    将SNLI数据集解析为: 前提(premises)、假设(hypotheses)和标签(labels)
+    标签分三类:
+    0 - 蕴涵(entailment)
+    1 - 矛盾(contradiction)
+    2 - 中性(neutral)
+    
+    下面是数据集的格式(第一行是列名, 从第二行开始每一行是一个训练样本):
+    gold_label	sentence1_binary_parse	sentence2_binary_parse	sentence1_parse	sentence2_parse	sentence1	sentence2	captionID	pairID	label1	label2	label3	label4	label5
+    neutral	( ( This ( church choir ) ) ( ( ( sings ( to ( the masses ) ) ) ( as ( they ( ( sing ( joyous songs ) ) ....
+    ...
+
+    我们重点关注前三列(row[0], row[1], row[2])
+    第一列是row[0]: 标签(labels) entailment, contradiction, neutral (不是这三个标签的直接忽略)
+    第二列是row[1]: 前提(premises)
+    第三列是row[2]: 假设(hypotheses)
+
+    返回:
+    premises: list of sentence
+    hypotheses: list of sentence
+    labels: list of int, 0 | 1 | 2
+    """
+    def extract_text(s):
+        # 删除我们不会使用的信息
+        s = re.sub('\\(', '', s)
+        s = re.sub('\\)', '', s)
+        # 用一个空格替换两个或多个连续的空格
+        s = re.sub('\\s{2,}', ' ', s)
+        return s.strip()
+
+    label_set = {'entailment': 0, 'contradiction': 1, 'neutral': 2}
+    file_name = os.path.join(
+        data_dir, 'snli_1.0_train.txt' if is_train else 'snli_1.0_test.txt')
+    with open(file_name, 'r') as f:
+        rows = [row.split('\t') for row in f.readlines()[1:]]
+    premises = [extract_text(row[1]) for row in rows if row[0] in label_set
+                ]  # 只关心三个标签的行: entailment, contradiction, neutral
+    hypotheses = [extract_text(row[2]) for row in rows if row[0] in label_set
+                  ]  # 只关心三个标签的行: entailment, contradiction, neutral
+    labels = [label_set[row[0]] for row in rows if row[0] in label_set]
+    return premises, hypotheses, labels
+
+
+class SNLIDataset(torch.utils.data.Dataset):
+    """
+    用于加载SNLI数据集的自定义数据集
+    """
+    def __init__(self, dataset, num_steps, vocab=None):
+        self.num_steps = num_steps
+        all_premise_tokens = tokenize(dataset[0])
+        all_hypothesis_tokens = tokenize(dataset[1])
+        if vocab is None:
+            self.vocab = Vocab(all_premise_tokens + \
+                all_hypothesis_tokens, min_freq=5, reserved_tokens=['<pad>'])
+        else:
+            self.vocab = vocab
+        self.premises = self._pad(all_premise_tokens)
+        self.hypotheses = self._pad(all_hypothesis_tokens)
+        self.labels = torch.tensor(dataset[2])
+        print('read ' + str(len(self.premises)) + ' examples')
+
+    def _pad(self, lines):
+        return torch.tensor([
+            truncate_pad(self.vocab[line], self.num_steps, self.vocab['<pad>'])
+            for line in lines
+        ])
+
+    def __getitem__(self, idx):
+        return (self.premises[idx], self.hypotheses[idx]), self.labels[idx]
+
+    def __len__(self):
+        return len(self.premises)
+
+
+def load_data_snli(batch_size, num_steps=50):
+    """
+    下载SNLI数据集并返回数据迭代器和词表
+    """
+    data_dir = download_extract('snli_1.0')
+    train_data = read_snli(data_dir, True)
+    test_data = read_snli(data_dir, False)
+    train_set = SNLIDataset(train_data, num_steps)
+    test_set = SNLIDataset(test_data, num_steps, train_set.vocab)
+    train_iter = torch.utils.data.DataLoader(train_set,
+                                             batch_size,
+                                             shuffle=True)
+    test_iter = torch.utils.data.DataLoader(test_set,
+                                            batch_size,
+                                            shuffle=False)
+    return train_iter, test_iter, train_set.vocab
+
+
+def read_imdb(data_dir, is_train):
+    """
+    读取IMDb评论数据集文本序列和标签
+
+    pos(积极) - 1
+    neg(消极) - 0
+
+    目录格式:
+    aclImdb/
+           test/
+               neg/
+                  *.txt
+               pos/
+                  *.txt
+           train/
+               neg/
+                  *.txt
+               pos/
+                  *.txt
+
+    返回: (data, labels)
+    data: list of sentence
+    labels: list of label
+    """
+    data, labels = [], []
+    for label in ('pos', 'neg'):
+        folder_name = os.path.join(data_dir, 'train' if is_train else 'test',
+                                   label)
+        for file in os.listdir(folder_name):
+            with open(os.path.join(folder_name, file), 'rb') as f:
+                review = f.read().decode('utf-8').replace('\n', '')
+                data.append(review)
+                labels.append(1 if label == 'pos' else 0)
+    return data, labels
+
+
+def load_data_imdb(batch_size, num_steps=500):
+    """
+    返回数据迭代器和IMDb评论数据集的词表
+
+    返回: (train_iter, test_iter, vocab)
+    """
+    data_dir = download_extract('aclImdb')
+    train_data = read_imdb(data_dir, True)
+    test_data = read_imdb(data_dir, False)
+    train_tokens = tokenize(train_data[0], token='word')
+    test_tokens = tokenize(test_data[0], token='word')
+    vocab = Vocab(train_tokens, min_freq=5)  # 过滤掉出现不到5次的单词
+    train_features = torch.tensor([
+        truncate_pad(vocab[line], num_steps, vocab['<pad>'])
+        for line in train_tokens
+    ])
+    test_features = torch.tensor([
+        truncate_pad(vocab[line], num_steps, vocab['<pad>'])
+        for line in test_tokens
+    ])
+    train_iter = load_array((train_features, torch.tensor(train_data[1])),
+                            batch_size)
+    test_iter = load_array((test_features, torch.tensor(test_data[1])),
+                           batch_size,
+                           is_train=False)
+    return train_iter, test_iter, vocab
