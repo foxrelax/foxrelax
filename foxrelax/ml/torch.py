@@ -3238,3 +3238,82 @@ def load_data_imdb(batch_size, num_steps=500):
                            batch_size,
                            is_train=False)
     return train_iter, test_iter, vocab
+
+
+class TokenEmbedding:
+    """
+    GloVe嵌入
+
+    vec.txt内容:
+    of 0.70853 0.57088 -0.4716 0.18048 0.54449 ...
+    to 0.68047 -0.039263 0.30186 -0.17792 0.42962 ...
+    and 0.26818 0.14346 -0.27877 0.016257 0.11384 ...
+
+    第1列为token, 其它列为token对应的vector
+    """
+    def __init__(self, embedding_name):
+        """
+        参数:
+        embedding_name: glove.6B.50d | glove.6B.100d
+        """
+        # index_to_token: list of token
+        # idx_to_vec的形状: (num_tokens, embedding_dim)
+        self.idx_to_token, self.idx_to_vec = self._load_embedding(
+            embedding_name)
+        self.unknown_idx = 0  # <unk>对应的idx
+
+        # token_to_idx: dict(), 从token到idx的映射
+        self.token_to_idx = {
+            token: idx
+            for idx, token in enumerate(self.idx_to_token)
+        }
+
+    def _load_embedding(self, embedding_name):
+        """
+        加载GloVe Embedding
+
+        参数:
+        embedding_name: glove.6B.50d | glove.6B.100d
+                        glove.6B.50d对应的embedding_dim=50
+                        glove.6B.100d对应的embedding_dim=100
+
+        返回: (idx_to_token, idx_to_vec)
+        idx_to_token: list of token
+        idx_to_vec的形状: (num_tokens, embedding_dim)
+        """
+        # idx_to_token: list of token
+        # idx_to_vec: list of vector, 每个vector是一个float list
+        idx_to_token, idx_to_vec = ['<unk>'], []
+        data_dir = download_extract(embedding_name)
+        # GloVe网站: https://nlp.stanford.edu/projects/glove/
+        # fastText网站: https://fasttext.cc/
+        with open(os.path.join(data_dir, 'vec.txt'), 'r') as f:
+            for line in f:
+                elems = line.rstrip().split(' ')
+                # 第1列为token, 其它列为token对应的vector
+                # token: 一个英文词
+                # elems: 表示token对应的vector, list of float
+                token, elems = elems[0], [float(elem) for elem in elems[1:]]
+                # 跳过标题信息, 例如fastText中的首行
+                if len(elems) > 1:
+                    idx_to_token.append(token)
+                    idx_to_vec.append(elems)
+        # 添加<unk>对应的vector
+        idx_to_vec = [[0] * len(idx_to_vec[0])] + idx_to_vec
+        return idx_to_token, torch.tensor(idx_to_vec)
+
+    def __getitem__(self, tokens):
+        """
+        返回的是词向量
+        """
+        # 获取所有tokens的索引
+        indices = [
+            self.token_to_idx.get(token, self.unknown_idx) for token in tokens
+        ]
+
+        # 根据索引返回tokens对应vecs
+        vecs = self.idx_to_vec[torch.tensor(indices)]
+        return vecs
+
+    def __len__(self):
+        return len(self.idx_to_token)
